@@ -48,6 +48,12 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Route reads through queries.
 - Route change notifications through callbacks.
 
+## Modules
+
+- Use ES modules.
+- Write relative imports without `.ts` or `.js` extensions.
+- Example: `import { createNote } from "./create-note"`.
+
 ## Classes and State
 
 - Keep OOP limited.

@@ -14,6 +14,14 @@ TypeScript is used for:
 - Shared core logic
 - UI logic
 
+Workspace packages should use ES modules.
+
+Relative imports should be extensionless:
+
+```ts
+import { createNote } from "./core/create-note";
+```
+
 Architecture details are owned by the core, command, query, application-layer, and storage docs.
 
 ## Desktop
@@ -74,7 +82,28 @@ For the first demo, prefer the smallest stack that proves the product:
 
 Avoid adding mobile tooling, sync infrastructure, plugin systems, or complex backend services until the core workflows are useful on desktop.
 
-## Other tools
+## Development Tooling
 
-- jest/vitest for tests
-- zod for validation
+Use a small toolchain that works well with TypeScript, ES modules, React, and Tauri.
+
+Recommended tools:
+
+- `pnpm` for workspaces and package management
+- `typescript` for typechecking
+- `vite` for React app development and bundling
+- `vitest` for unit tests
+- `@vitest/coverage-v8` for test coverage when needed
+- `zod` for runtime validation and schema parsing
+- `eslint`, `@eslint/js`, `typescript-eslint` for linting
+- `prettier` for formatting
+- `@tauri-apps/cli` for desktop app commands
+
+Avoid adding heavier tools until the project needs them.
+
+Optional later:
+
+- `happy-dom` or `jsdom` for React component tests
+- `@testing-library/react` for UI behavior tests
+- `fast-check` for property-based tests around query/filter logic
+
+TypeScript config should support ES modules and extensionless imports. Prefer `moduleResolution: "bundler"` for app/library code handled by Vite/Vitest.
