@@ -9,5 +9,13 @@
     "test": "pnpm --recursive --if-present test",
     "lint": "pnpm --recursive --if-present lint",
     "typecheck": "pnpm --recursive --if-present typecheck"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^10.8.1",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^2.1.9"
   }
 }
