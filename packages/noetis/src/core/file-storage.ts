@@ -107,13 +107,16 @@ export class FileStorage implements CoreStorage {
       return serialized;
     }
 
-    const path = this.fileSystem.combinePaths([
-      this.getRecordsDirectoryPath(),
+    const path = await this.fileSystem.combinePaths([
+      await this.getRecordsDirectoryPath(),
       serialized.value.name,
     ]);
 
-    this.fileSystem.writeFileContent(path, serialized.value.content);
-    this.saveRecordToIndex(record);
+    await this.ensureDirectoryExists(
+      await this.fileSystem.getDirectoryName(path),
+    );
+    await this.fileSystem.writeFileContent(path, serialized.value.content);
+    await this.saveRecordToIndex(record);
     this.logger.info({
       message: "FileStorage.addRecord succeeded.",
       data: { id: record.id, path },
@@ -131,7 +134,7 @@ export class FileStorage implements CoreStorage {
       data: { id: params.id },
     });
 
-    const existingRecord = this.readStoredRecord(params.id);
+    const existingRecord = await this.readStoredRecord(params.id);
 
     if (!existingRecord.ok) {
       this.logger.error({
@@ -166,11 +169,12 @@ export class FileStorage implements CoreStorage {
       return serialized;
     }
 
-    this.fileSystem.writeFileContent(
-      this.getRecordPath(record.id),
-      serialized.value.content,
+    const path = await this.getRecordPath(record.id);
+    await this.ensureDirectoryExists(
+      await this.fileSystem.getDirectoryName(path),
     );
-    this.saveRecordToIndex(record);
+    await this.fileSystem.writeFileContent(path, serialized.value.content);
+    await this.saveRecordToIndex(record);
     this.logger.info({
       message: "FileStorage.updateRecord succeeded.",
       data: { id: record.id },
@@ -186,9 +190,10 @@ export class FileStorage implements CoreStorage {
       data: { id },
     });
 
-    const path = this.getRecordPath(id);
+    const path = await this.getRecordPath(id);
     const fileExists =
-      this.fileSystem.isExists(path) && this.fileSystem.isFile(path);
+      (await this.fileSystem.isExists(path)) &&
+      (await this.fileSystem.isFile(path));
 
     if (!fileExists) {
       const error: CoreError = {
@@ -207,8 +212,8 @@ export class FileStorage implements CoreStorage {
       return { ok: false, error };
     }
 
-    this.fileSystem.removeFile(path);
-    this.removeRecordFromIndex(id);
+    await this.fileSystem.removeFile(path);
+    await this.removeRecordFromIndex(id);
     this.logger.info({
       message: "FileStorage.removeRecord succeeded.",
       data: { id, path },
@@ -224,7 +229,9 @@ export class FileStorage implements CoreStorage {
       data: { count: ids.length },
     });
 
-    const results = ids.map((id) => this.readStoredRecord(id));
+    const results = await Promise.all(
+      ids.map((id) => this.readStoredRecord(id)),
+    );
     const failure = results.find((result) => !result.ok);
 
     if (failure !== undefined && !failure.ok) {
@@ -270,9 +277,9 @@ export class FileStorage implements CoreStorage {
       },
     });
 
-    const recordsDirectoryPath = this.getRecordsDirectoryPath();
+    const recordsDirectoryPath = await this.getRecordsDirectoryPath();
 
-    if (!this.fileSystem.isExists(recordsDirectoryPath)) {
+    if (!(await this.fileSystem.isExists(recordsDirectoryPath))) {
       this.logger.info({
         message: "FileStorage.findRecords succeeded.",
         data: { count: 0 },
@@ -280,10 +287,13 @@ export class FileStorage implements CoreStorage {
       return { ok: true, value: [] };
     }
 
-    const indexItems = this.readRecordIndexOrCreate();
-    const records = indexItems
-      .filter((item) => matchesIndexQuery(item, query))
-      .map((item) => this.readStoredRecord(item.id))
+    const indexItems = await this.readRecordIndexOrCreate();
+    const recordResults = await Promise.all(
+      indexItems
+        .filter((item) => matchesIndexQuery(item, query))
+        .map((item) => this.readStoredRecord(item.id)),
+    );
+    const records = recordResults
       .filter(
         (
           result: Result<StoredRecord, CoreError>,
@@ -304,21 +314,23 @@ export class FileStorage implements CoreStorage {
   }
 
   // Reads one stored markdown file and maps its sections back to a record.
-  private readStoredRecord(id: string): Result<StoredRecord, CoreError> {
+  private async readStoredRecord(
+    id: string,
+  ): Promise<Result<StoredRecord, CoreError>> {
     return this.readStoredRecordFromPath({
       id,
-      path: this.getRecordPath(id),
+      path: await this.getRecordPath(id),
     });
   }
 
   // Reads one stored markdown file from a known path.
-  private readStoredRecordFromPath(params: {
+  private async readStoredRecordFromPath(params: {
     id: string;
     path: string;
-  }): Result<StoredRecord, CoreError> {
+  }): Promise<Result<StoredRecord, CoreError>> {
     const fileExists =
-      this.fileSystem.isExists(params.path) &&
-      this.fileSystem.isFile(params.path);
+      (await this.fileSystem.isExists(params.path)) &&
+      (await this.fileSystem.isFile(params.path));
 
     if (!fileExists) {
       return createRecordNotFoundError(params.id);
@@ -326,50 +338,67 @@ export class FileStorage implements CoreStorage {
 
     return parseStoredRecord({
       id: params.id,
-      content: this.fileSystem.getFileContent(params.path),
+      content: await this.fileSystem.getFileContent(params.path),
     });
   }
 
   // Resolves the storage path for a record id.
-  private getRecordPath(id: string): string {
+  private async getRecordPath(id: string): Promise<string> {
     return this.fileSystem.combinePaths([
-      this.getRecordsDirectoryPath(),
+      await this.getRecordsDirectoryPath(),
       `${id}${MARKDOWN_EXTENSION}`,
     ]);
   }
 
   // Resolves the directory where records are stored.
-  private getRecordsDirectoryPath(): string {
+  private async getRecordsDirectoryPath(): Promise<string> {
     return this.fileSystem.combinePaths([
-      this.fileSystem.getRootDirectory(),
+      await this.fileSystem.getRootDirectory(),
       RECORDS_DIRECTORY_NAME,
     ]);
   }
 
   // Reads the lightweight record search index from storage.
-  private readRecordIndex(): StoredRecordIndexItem[] {
-    const path = this.getRecordIndexPath();
+  private async readRecordIndex(): Promise<StoredRecordIndexItem[]> {
+    const path = await this.getRecordIndexPath();
 
-    if (!this.fileSystem.isExists(path) || !this.fileSystem.isFile(path)) {
+    if (
+      !(await this.fileSystem.isExists(path)) ||
+      !(await this.fileSystem.isFile(path))
+    ) {
       return [];
     }
 
-    return parseRecordIndex(this.fileSystem.getFileContent(path));
+    return parseRecordIndex(await this.fileSystem.getFileContent(path));
   }
 
   // Builds the index from existing records when the index file is missing.
-  private readRecordIndexOrCreate(): StoredRecordIndexItem[] {
-    const path = this.getRecordIndexPath();
+  private async readRecordIndexOrCreate(): Promise<StoredRecordIndexItem[]> {
+    const path = await this.getRecordIndexPath();
 
-    if (this.fileSystem.isExists(path) && this.fileSystem.isFile(path)) {
+    if (
+      (await this.fileSystem.isExists(path)) &&
+      (await this.fileSystem.isFile(path))
+    ) {
       return this.readRecordIndex();
     }
 
-    const indexItems = this.fileSystem
-      .getDirectoryContent(this.getRecordsDirectoryPath())
-      .filter((recordPath) => this.fileSystem.isFile(recordPath))
-      .filter((recordPath) => recordPath.endsWith(MARKDOWN_EXTENSION))
-      .map((recordPath) =>
+    const recordPaths = await this.fileSystem.getDirectoryContent(
+      await this.getRecordsDirectoryPath(),
+    );
+    const recordFilePaths: string[] = [];
+
+    for (const recordPath of recordPaths) {
+      if (
+        (await this.fileSystem.isFile(recordPath)) &&
+        recordPath.endsWith(MARKDOWN_EXTENSION)
+      ) {
+        recordFilePaths.push(recordPath);
+      }
+    }
+
+    const recordResults = await Promise.all(
+      recordFilePaths.map((recordPath) =>
         this.readStoredRecordFromPath({
           id: getRecordIdFromRecordPath({
             path: recordPath,
@@ -377,7 +406,9 @@ export class FileStorage implements CoreStorage {
           }),
           path: recordPath,
         }),
-      )
+      ),
+    );
+    const indexItems = recordResults
       .filter(
         (
           result: Result<StoredRecord, CoreError>,
@@ -385,46 +416,58 @@ export class FileStorage implements CoreStorage {
       )
       .map((result) => createRecordIndexItem(result.value));
 
-    this.writeRecordIndex(indexItems);
+    await this.writeRecordIndex(indexItems);
 
     return indexItems;
   }
 
   // Writes the lightweight record search index to storage.
-  private writeRecordIndex(indexItems: StoredRecordIndexItem[]): void {
-    this.fileSystem.writeFileContent(
-      this.getRecordIndexPath(),
+  private async writeRecordIndex(
+    indexItems: StoredRecordIndexItem[],
+  ): Promise<void> {
+    const path = await this.getRecordIndexPath();
+    await this.ensureDirectoryExists(
+      await this.fileSystem.getDirectoryName(path),
+    );
+    await this.fileSystem.writeFileContent(
+      path,
       JSON.stringify(indexItems, null, 2),
     );
   }
 
   // Saves or replaces one record entry in the search index.
-  private saveRecordToIndex(record: StoredRecord): void {
-    const indexItems = this.readRecordIndex();
+  private async saveRecordToIndex(record: StoredRecord): Promise<void> {
+    const indexItems = await this.readRecordIndex();
     const nextIndexItems = upsertRecordIndexItem({
       indexItems,
       record,
     });
 
-    this.writeRecordIndex(nextIndexItems);
+    await this.writeRecordIndex(nextIndexItems);
   }
 
   // Removes one record entry from the search index.
-  private removeRecordFromIndex(id: string): void {
-    const indexItems = this.readRecordIndex();
+  private async removeRecordFromIndex(id: string): Promise<void> {
+    const indexItems = await this.readRecordIndex();
     const nextIndexItems = removeRecordIndexItem({
       indexItems,
       id,
     });
 
-    this.writeRecordIndex(nextIndexItems);
+    await this.writeRecordIndex(nextIndexItems);
   }
 
   // Resolves the storage path for the record search index.
-  private getRecordIndexPath(): string {
+  private async getRecordIndexPath(): Promise<string> {
     return this.fileSystem.combinePaths([
-      this.fileSystem.getRootDirectory(),
+      await this.fileSystem.getRootDirectory(),
       INDEX_FILE_NAME,
     ]);
+  }
+
+  private async ensureDirectoryExists(path: string): Promise<void> {
+    if (!(await this.fileSystem.isExists(path))) {
+      await this.fileSystem.createDirectory(path);
+    }
   }
 }

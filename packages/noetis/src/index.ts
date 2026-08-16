@@ -1,6 +1,6 @@
 export { CoreEngine } from "./core/core";
 export { FileStorage } from "./core/file-storage";
-export { ConsoleLogger } from "./core/logger";
+export { ConsoleLogger } from "./core/console-logger";
 export type { CoreEngineConfig, StateChangeCallback } from "./core/core";
 export type { Logger } from "./core/logger";
 export type {

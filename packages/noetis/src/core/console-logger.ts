@@ -1,4 +1,4 @@
-import { LogEntry, Logger } from "./logger";
+import type { LogEntry, Logger } from "./logger";
 
 // Sends storage logs to the JavaScript console.
 export class ConsoleLogger implements Logger {
@@ -18,4 +18,4 @@ export class ConsoleLogger implements Logger {
     console.error(entry.message, entry.data);
   }
 }
-export { Logger };
+export type { Logger };

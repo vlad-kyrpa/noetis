@@ -8,7 +8,7 @@ import type {
   StoredRecord,
   StoredRecordHeader,
 } from "./types";
-import { Logger } from "./logger";
+import type { Logger } from "./logger";
 
 const ROOT_PATH = "/notes";
 const CREATED_AT = new Date("2026-08-15T00:00:00.000Z");
@@ -37,7 +37,7 @@ class InMemoryFileSystemAdapter implements FileSystemAdapter {
   }
 
   // Checks whether a path exists as either a file or directory.
-  isExists(path: string): boolean {
+  async isExists(path: string): Promise<boolean> {
     const normalizedPath = this.normalize(path);
     return (
       this.files.has(normalizedPath) || this.directories.has(normalizedPath)
@@ -45,17 +45,17 @@ class InMemoryFileSystemAdapter implements FileSystemAdapter {
   }
 
   // Checks whether a path points to a seeded or written file.
-  isFile(path: string): boolean {
+  async isFile(path: string): Promise<boolean> {
     return this.files.has(this.normalize(path));
   }
 
   // Checks whether a path points to a known directory.
-  isDirectory(path: string): boolean {
+  async isDirectory(path: string): Promise<boolean> {
     return this.directories.has(this.normalize(path));
   }
 
   // Lists direct children for storage scans.
-  getDirectoryContent(directoryPath: string): readonly string[] {
+  async getDirectoryContent(directoryPath: string): Promise<readonly string[]> {
     const normalizedDirectoryPath = this.normalize(directoryPath);
     const childPrefix = `${normalizedDirectoryPath}/`;
     const paths = [
@@ -71,43 +71,50 @@ class InMemoryFileSystemAdapter implements FileSystemAdapter {
   }
 
   // Reads file content by normalized path.
-  getFileContent(path: string): string {
+  async getFileContent(path: string): Promise<string> {
     return this.files.get(this.normalize(path)) ?? "";
   }
 
   // Writes file content by normalized path.
-  writeFileContent(path: string, content: string): void {
+  async writeFileContent(path: string, content: string): Promise<void> {
     this.files.set(this.normalize(path), content);
   }
 
   // Removes a file by normalized path.
-  removeFile(path: string): void {
+  async removeFile(path: string): Promise<void> {
     this.files.delete(this.normalize(path));
   }
 
   // Creates a directory path and its missing parents.
-  createDirectory(path: string): void {
-    this.directories.add(this.normalize(path));
+  async createDirectory(path: string): Promise<void> {
+    const normalizedPath = this.normalize(path);
+    const parts = normalizedPath.split("/").filter((part) => part.length > 0);
+    let currentPath = normalizedPath.startsWith("/") ? "/" : "";
+
+    parts.forEach((part) => {
+      currentPath = this.normalize(`${currentPath}/${part}`);
+      this.directories.add(currentPath);
+    });
   }
 
   // Returns the configured root directory.
-  getRootDirectory(): string {
+  async getRootDirectory(): Promise<string> {
     return ROOT_PATH;
   }
 
   // Converts an absolute path to a path relative to the root directory.
-  getRelativePath(path: string): string {
+  async getRelativePath(path: string): Promise<string> {
     return this.normalize(path).slice(ROOT_PATH.length + 1);
   }
 
   // Returns the parent directory for a file path.
-  getDirectoryName(path: string): string {
+  async getDirectoryName(path: string): Promise<string> {
     const normalizedPath = this.normalize(path);
     return normalizedPath.slice(0, normalizedPath.lastIndexOf("/"));
   }
 
   // Combines path segments with slash normalization.
-  combinePaths(parts: readonly string[]): string {
+  async combinePaths(parts: readonly string[]): Promise<string> {
     return this.normalize(parts.join("/"));
   }
 
@@ -191,8 +198,10 @@ function createStoredRecordContent(params: {
 }
 
 // Reads the generated index file as plain JSON for assertions.
-function readIndex(fileSystem: InMemoryFileSystemAdapter): unknown {
-  return JSON.parse(fileSystem.getFileContent(`${ROOT_PATH}/index.json`));
+async function readIndex(
+  fileSystem: InMemoryFileSystemAdapter,
+): Promise<unknown> {
+  return JSON.parse(await fileSystem.getFileContent(`${ROOT_PATH}/index.json`));
 }
 
 describe("FileStorage", () => {
@@ -220,9 +229,11 @@ describe("FileStorage", () => {
       }
 
       expect(
-        fileSystem.getFileContent(`${ROOT_PATH}/records/${result.value.id}.md`),
+        await fileSystem.getFileContent(
+          `${ROOT_PATH}/records/${result.value.id}.md`,
+        ),
       ).toContain("Hello World");
-      expect(readIndex(fileSystem)).toEqual([
+      expect(await readIndex(fileSystem)).toEqual([
         {
           id: result.value.id,
           title: "Hello World",
@@ -296,9 +307,9 @@ describe("FileStorage", () => {
         }),
       });
       expect(
-        fileSystem.getFileContent(`${ROOT_PATH}/records/note-1.md`),
+        await fileSystem.getFileContent(`${ROOT_PATH}/records/note-1.md`),
       ).toContain(`updatedAt: ${UPDATED_AT.toISOString()}`);
-      expect(readIndex(fileSystem)).toEqual([
+      expect(await readIndex(fileSystem)).toEqual([
         { id: "note-1", title: "Updated title", tags: ["daily"] },
       ]);
     });
@@ -350,8 +361,10 @@ describe("FileStorage", () => {
       const result = await storage.removeRecord("note-1");
 
       expect(result).toEqual({ ok: true, value: undefined });
-      expect(fileSystem.isExists(`${ROOT_PATH}/records/note-1.md`)).toBe(false);
-      expect(readIndex(fileSystem)).toEqual([
+      expect(await fileSystem.isExists(`${ROOT_PATH}/records/note-1.md`)).toBe(
+        false,
+      );
+      expect(await readIndex(fileSystem)).toEqual([
         { id: "note-2", title: "Second", tags: ["project"] },
       ]);
     });
@@ -450,7 +463,7 @@ describe("FileStorage", () => {
           }),
         ],
       });
-      expect(readIndex(fileSystem)).toEqual([
+      expect(await readIndex(fileSystem)).toEqual([
         { id: "note-1", title: "Coffee", tags: ["daily"] },
       ]);
     });

@@ -16,18 +16,18 @@ export type UpdateStoredRecordParams = {
 };
 
 export interface FileSystemAdapter {
-  isExists: (path: string) => boolean;
-  isFile: (path: string) => boolean;
-  isDirectory: (path: string) => boolean;
-  getDirectoryContent: (directoryPath: string) => readonly string[];
-  getFileContent: (path: string) => string;
-  writeFileContent: (path: string, content: string) => void;
-  removeFile: (path: string) => void;
-  createDirectory: (path: string) => void;
-  getRootDirectory: () => string;
-  getRelativePath: (path: string) => string;
-  getDirectoryName: (path: string) => string;
-  combinePaths: (parts: readonly string[]) => string;
+  isExists: (path: string) => Promise<boolean>;
+  isFile: (path: string) => Promise<boolean>;
+  isDirectory: (path: string) => Promise<boolean>;
+  getDirectoryContent: (directoryPath: string) => Promise<readonly string[]>;
+  getFileContent: (path: string) => Promise<string>;
+  writeFileContent: (path: string, content: string) => Promise<void>;
+  removeFile: (path: string) => Promise<void>;
+  createDirectory: (path: string) => Promise<void>;
+  getRootDirectory: () => Promise<string>;
+  getRelativePath: (path: string) => Promise<string>;
+  getDirectoryName: (path: string) => Promise<string>;
+  combinePaths: (parts: readonly string[]) => Promise<string>;
 }
 
 export interface CoreStorage {

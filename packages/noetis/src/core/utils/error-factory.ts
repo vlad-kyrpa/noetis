@@ -1,4 +1,4 @@
-import { CoreError, Result } from "../types";
+import type { CoreError, Result } from "../types";
 
 // Creates a typed not-found error for missing stored records.
 export function createRecordNotFoundError(
