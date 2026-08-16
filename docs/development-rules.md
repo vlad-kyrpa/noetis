@@ -8,6 +8,8 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Do not use `any`.
 - Do not guess types when creating constants.
 - Define explicit return types for functions and class methods.
+- Prefer inferred types for local implementation details when the assignment makes the type obvious.
+- Do not annotate callback parameters or return values inside `map`, `filter`, `find`, `flatMap`, or similar collection methods unless inference fails or a type predicate is required.
 - Keep shared module types in a `types.ts` file at the module root.
 - Prefer narrow domain types over loose primitives when the value has meaning.
 - No concrete class/function should depend on other concrete class object -> use interfaces.
