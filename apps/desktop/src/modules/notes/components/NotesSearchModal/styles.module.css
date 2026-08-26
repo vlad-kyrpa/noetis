@@ -27,6 +27,10 @@
   color: var(--color-danger);
 }
 
+.warning {
+  color: var(--color-danger);
+}
+
 .resultButton {
   display: grid;
   gap: var(--space-4);
