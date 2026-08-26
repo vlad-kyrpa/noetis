@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { Slot } from "radix-ui";
+import type { CSSProperties, ReactNode } from "react";
 import { combineStyles } from "../../utils/combineClasses";
-import styles from "./styles.module.css";
 
 export enum ColumnAlign {
   Start = "start",
@@ -23,53 +23,84 @@ export enum ColumnGap {
   Large = "large",
 }
 
-interface ColumnProps {
+export interface ColumnProps {
   children: ReactNode;
   className?: string;
   align?: ColumnAlign;
   justify?: ColumnJustify;
   gap?: ColumnGap;
+  asChild?: boolean;
+  style?: CSSProperties;
 }
 
-const ALIGN_CLASSES: Record<ColumnAlign, string> = {
-  [ColumnAlign.Start]: styles.alignStart,
-  [ColumnAlign.Center]: styles.alignCenter,
-  [ColumnAlign.End]: styles.alignEnd,
-  [ColumnAlign.Stretch]: styles.alignStretch,
+const ALIGN_STYLES: Record<ColumnAlign, CSSProperties["alignItems"]> = {
+  [ColumnAlign.Start]: "flex-start",
+  [ColumnAlign.Center]: "center",
+  [ColumnAlign.End]: "flex-end",
+  [ColumnAlign.Stretch]: "stretch",
 } as const;
 
-const JUSTIFY_CLASSES: Record<ColumnJustify, string> = {
-  [ColumnJustify.Start]: styles.justifyStart,
-  [ColumnJustify.Center]: styles.justifyCenter,
-  [ColumnJustify.End]: styles.justifyEnd,
-  [ColumnJustify.Between]: styles.justifyBetween,
+const JUSTIFY_STYLES: Record<ColumnJustify, CSSProperties["justifyContent"]> = {
+  [ColumnJustify.Start]: "flex-start",
+  [ColumnJustify.Center]: "center",
+  [ColumnJustify.End]: "flex-end",
+  [ColumnJustify.Between]: "space-between",
 } as const;
 
-const GAP_CLASSES: Record<ColumnGap, string> = {
-  [ColumnGap.None]: styles.gapNone,
-  [ColumnGap.Small]: styles.gapSmall,
-  [ColumnGap.Medium]: styles.gapMedium,
-  [ColumnGap.Large]: styles.gapLarge,
+const GAP_STYLES: Record<ColumnGap, CSSProperties["gap"]> = {
+  [ColumnGap.None]: "var(--space-0)",
+  [ColumnGap.Small]: "var(--space-4)",
+  [ColumnGap.Medium]: "var(--space-8)",
+  [ColumnGap.Large]: "var(--space-10)",
 } as const;
 
-// Renders a vertical flex container with typed layout variants and extendable styles.
+interface CreateColumnStyleParams {
+  align: ColumnAlign;
+  justify: ColumnJustify;
+  gap: ColumnGap;
+  style: CSSProperties | undefined;
+}
+
+// Converts typed layout props into flex styles while preserving caller overrides.
+function createColumnStyle({
+  align,
+  justify,
+  gap,
+  style,
+}: CreateColumnStyleParams): CSSProperties {
+  return {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: ALIGN_STYLES[align],
+    justifyContent: JUSTIFY_STYLES[justify],
+    gap: GAP_STYLES[gap],
+    ...style,
+  };
+}
+
+// Renders a vertical Radix-composable flex container with typed layout variants.
 export function Column({
   children,
   className,
   align = ColumnAlign.Stretch,
   justify = ColumnJustify.Start,
   gap = ColumnGap.Medium,
+  asChild = false,
+  style,
 }: ColumnProps): JSX.Element {
+  const columnStyle = createColumnStyle({ align, justify, gap, style });
+  const combinedClassName = combineStyles(className);
+
+  if (asChild) {
+    return (
+      <Slot.Root className={combinedClassName} style={columnStyle}>
+        {children}
+      </Slot.Root>
+    );
+  }
+
   return (
-    <div
-      className={combineStyles(
-        styles.column,
-        ALIGN_CLASSES[align],
-        JUSTIFY_CLASSES[justify],
-        GAP_CLASSES[gap],
-        className,
-      )}
-    >
+    <div className={combinedClassName} style={columnStyle}>
       {children}
     </div>
   );

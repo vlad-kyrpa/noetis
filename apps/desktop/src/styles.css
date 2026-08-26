@@ -26,9 +26,16 @@
   --color-danger-active: #4a1a20;
   --color-focus: rgba(231, 237, 247, 0.22);
   --color-backdrop: rgba(0, 0, 0, 0.68);
+  --color-search-surface: rgba(11, 12, 15, 0.86);
+  --color-modal-transparent: rgba(5, 5, 6, 0.18);
+  --color-result-surface: rgba(11, 12, 15, 0.62);
+  --color-scrollbar-thumb: rgba(168, 175, 189, 0.38);
+  --color-scrollbar-thumb-hover: rgba(216, 225, 239, 0.58);
   --color-transparent: transparent;
 
   --shadow-modal: 0 24px 70px rgba(0, 0, 0, 0.55);
+  --shadow-search: 0 18px 44px rgba(0, 0, 0, 0.34);
+  --modal-backdrop-blur: 6px;
 
   --radius-xs: 6px;
   --radius-sm: 8px;
@@ -83,6 +90,7 @@
   --layout-modal-width: 560px;
   --layout-sr-only: 1px;
   --layout-sr-offset: -1px;
+  --scrollbar-size: 8px;
 
   --control-height-sx: 32px;
   --control-height-sm: 36px;
@@ -99,6 +107,7 @@
   --focus-width: 3px;
   --transition-duration-fast: 120ms;
   --transition-easing-standard: ease;
+  --opacity-hidden: 0;
   --opacity-disabled: 0.72;
 }
 

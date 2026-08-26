@@ -1,5 +1,6 @@
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { CoreProvider } from "@common/contexts/CoreContext";
+import { NotesLayout } from "./modules/notes/components/NotesLayout/NotesLayout";
 import { NotesPage } from "./modules/notes/components/NotesPage/NotesPage";
 
 function AppProviders(): JSX.Element {
@@ -22,12 +23,17 @@ const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           {
-            path: "/",
-            element: <NotesPage />,
-          },
-          {
-            path: "/notes",
-            element: <NotesPage />,
+            element: <NotesLayout />,
+            children: [
+              {
+                path: "/",
+                element: <NotesPage />,
+              },
+              {
+                path: "/notes",
+                element: <NotesPage />,
+              },
+            ],
           },
         ],
       },

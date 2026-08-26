@@ -4,13 +4,13 @@ import {
   Column,
   ColumnAlign,
   ColumnJustify,
-  IconButton,
   Row,
   RowAlign,
 } from "@common/components";
 import styles from "./styles.module.css";
 
-export function NotesPage() {
+// Hosts the main notes workspace content.
+export function NotesPage(): JSX.Element {
   return (
     <Column
       align={ColumnAlign.Center}
@@ -21,7 +21,6 @@ export function NotesPage() {
         <Button type={ButtonType.Regular} onClick={() => {}}>
           Click me
         </Button>
-        <IconButton iconName="search" onClick={() => {}} ariaLabel="Search" />
       </Row>
     </Column>
   );
