@@ -1,5 +1,4 @@
 import {
-  ButtonType,
   ConfirmationModal,
   IconButton,
   TextArea,
@@ -38,38 +37,44 @@ export function NotePage({ noteId }: NotePageProps): JSX.Element {
 
   return (
     <section className={styles.page}>
-      <div className={styles.actions}>
-        <IconButton
-          ariaLabel="Save note"
-          iconName="save"
-          onClick={() => void save()}
-          type={ButtonType.Active}
-        />
-        <IconButton
-          ariaLabel="Delete note"
-          iconName="trash"
-          onClick={requestDelete}
-          type={ButtonType.Danger}
-        />
-      </div>
       <div className={styles.editor}>
-        <TextField
-          ariaLabel="Note title"
-          controlClassName={styles.titleInput}
-          onChange={setTitle}
-          placeholder={isLoading ? "Loading..." : "Title"}
-          value={note.title}
-          variant={TextFieldVariant.Borderless}
-        />
-        <TextField
-          ariaLabel="Note tags"
-          controlClassName={styles.tagsInput}
-          onChange={setTags}
-          placeholder="Tags..."
-          value={note.tags}
-          variant={TextFieldVariant.Borderless}
-        />
+        <div className={styles.titleRow}>
+          <TextField
+            ariaLabel="Note title"
+            className={styles.titleField}
+            controlClassName={styles.titleInput}
+            onChange={setTitle}
+            placeholder={isLoading ? "Loading..." : "Title"}
+            value={note.title}
+            variant={TextFieldVariant.Borderless}
+          />
+          <div className={styles.actions}>
+            <IconButton
+              ariaLabel="Save note"
+              iconName="save"
+              onClick={() => void save()}
+            />
+            <IconButton
+              ariaLabel="Delete note"
+              iconName="trash"
+              onClick={requestDelete}
+            />
+          </div>
+        </div>
+        <div className={styles.tagsRow}>
+          <span className={styles.tagsLabel}>Tags:</span>
+          <TextField
+            ariaLabel="Note tags"
+            className={styles.tagsField}
+            controlClassName={styles.tagsInput}
+            onChange={setTags}
+            placeholder="Tags..."
+            value={note.tags}
+            variant={TextFieldVariant.Borderless}
+          />
+        </div>
         {error ? <p className={styles.error}>{error.message}</p> : null}
+        <div className={styles.separator} />
         <TextArea
           ariaLabel="Note body"
           className={styles.bodyField}

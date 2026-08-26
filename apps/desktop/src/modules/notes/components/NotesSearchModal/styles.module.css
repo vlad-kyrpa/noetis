@@ -16,10 +16,10 @@
 }
 
 .status {
-  min-height: var(--font-size-md);
+  min-height: var(--font-size-main);
   margin: var(--space-0);
   color: var(--color-text-subtle);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-main);
   line-height: var(--line-height-body);
 }
 
@@ -50,7 +50,7 @@
 .resultTitle {
   margin: var(--space-0);
   color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-header);
   font-weight: var(--font-weight-heading);
   line-height: var(--line-height-title);
 }
@@ -58,7 +58,7 @@
 .resultContent {
   margin: var(--space-0);
   color: var(--color-text-muted);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-main);
   line-height: var(--line-height-body);
 }
 

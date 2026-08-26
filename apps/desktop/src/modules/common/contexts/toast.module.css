@@ -37,7 +37,7 @@
 
 .text {
   margin: var(--space-0);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-sub-text);
   line-height: var(--line-height-body);
 }
 
