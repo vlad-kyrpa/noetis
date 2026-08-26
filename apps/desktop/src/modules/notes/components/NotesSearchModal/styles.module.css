@@ -27,6 +27,22 @@
   color: var(--color-danger);
 }
 
+.resultButton {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  border: var(--space-0);
+  padding: var(--space-0);
+  color: inherit;
+  text-align: left;
+  background: var(--color-transparent);
+  cursor: pointer;
+}
+
+.resultButton:focus {
+  outline: none;
+}
+
 .resultTitle {
   margin: var(--space-0);
   color: var(--color-text);

@@ -40,12 +40,12 @@ describe("CoreEngine", () => {
       });
 
       engine.addStateUpdateCallback(callback);
-      const result: Result<void, CoreError> = await engine.run({
+      const result: Result<StoredRecord, CoreError> = await engine.run({
         id: "create-note",
         payload,
       });
 
-      expect(result).toEqual({ ok: true, value: undefined });
+      expect(result).toEqual({ ok: true, value: MOCK_STORED_RECORD });
       expect(addRecord).toHaveBeenCalledWith(payload);
       expect(callback).toHaveBeenCalledTimes(1);
     });
@@ -84,7 +84,7 @@ describe("CoreEngine", () => {
         storage: createMockCoreStorage({ updateRecord }),
       });
 
-      await engine.run({
+      const result: Result<StoredRecord, CoreError> = await engine.run({
         id: "update-note",
         payload: {
           id: MOCK_NOTE_ID,
@@ -95,6 +95,7 @@ describe("CoreEngine", () => {
         },
       });
 
+      expect(result).toEqual({ ok: true, value: MOCK_STORED_RECORD });
       expect(updateRecord).toHaveBeenCalledWith({
         id: MOCK_NOTE_ID,
         payload: expect.objectContaining({ id: MOCK_NOTE_ID }),

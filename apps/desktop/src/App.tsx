@@ -1,18 +1,33 @@
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+  useParams,
+} from "react-router-dom";
 import { CoreProvider } from "@common/contexts/CoreContext";
+import { ToastProvider } from "@common/contexts/ToastContext";
 import { NotesLayout } from "./modules/notes/components/NotesLayout/NotesLayout";
-import { NotesPage } from "./modules/notes/components/NotesPage/NotesPage";
+import { NotePage } from "./modules/notes/components/NotePage/NotePage";
 
 function AppProviders(): JSX.Element {
   return (
     <CoreProvider>
-      <Outlet />
+      <ToastProvider>
+        <Outlet />
+      </ToastProvider>
     </CoreProvider>
   );
 }
 
 function RootLayout(): JSX.Element {
   return <Outlet />;
+}
+
+// Adapts router params into the note page boundary.
+function NoteRoute(): JSX.Element {
+  const { noteId } = useParams();
+
+  return <NotePage noteId={noteId} />;
 }
 
 const router = createBrowserRouter([
@@ -27,11 +42,15 @@ const router = createBrowserRouter([
             children: [
               {
                 path: "/",
-                element: <NotesPage />,
+                element: <NoteRoute />,
               },
               {
                 path: "/notes",
-                element: <NotesPage />,
+                element: <NoteRoute />,
+              },
+              {
+                path: "/notes/:noteId",
+                element: <NoteRoute />,
               },
             ],
           },

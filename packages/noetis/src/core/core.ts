@@ -1,5 +1,6 @@
 import type {
   Command,
+  CommandResult,
   CoreError,
   CoreStorage,
   NoteId,
@@ -11,12 +12,12 @@ import type {
 
 export type StateChangeCallback = () => void;
 
-type CommandHandler = (command: Command) => Promise<Result<void, CoreError>>;
+type CommandHandler<Id extends Command["id"]> = (
+  command: Extract<Command, { id: Id }>,
+) => Promise<CommandResult<Id>>;
 
 type CommandHandlers = {
-  [Id in Command["id"]]: (
-    command: Extract<Command, { id: Id }>,
-  ) => Promise<Result<void, CoreError>>;
+  [Id in Command["id"]]: CommandHandler<Id>;
 };
 
 export interface CoreEngineConfig {
@@ -41,11 +42,11 @@ export class CoreEngine {
   }
 
   // Routes state changes through command handlers and reports typed failures to callers.
-  async run(command: Command): Promise<Result<void, CoreError>> {
-    const handler: CommandHandler = this.commandHandlers[
-      command.id
-    ] as CommandHandler;
-    const result: Result<void, CoreError> = await handler(command);
+  async run<Id extends Command["id"]>(
+    command: Extract<Command, { id: Id }>,
+  ): Promise<CommandResult<Id>> {
+    const handler = this.commandHandlers[command.id] as CommandHandler<Id>;
+    const result = await handler(command);
 
     if (result.ok) {
       this.notifyStateUpdate();
@@ -84,27 +85,21 @@ export class CoreEngine {
   // Creates a note through storage so persistence stays outside the core engine.
   private createNote = async (
     command: Extract<Command, { id: "create-note" }>,
-  ): Promise<Result<void, CoreError>> => {
-    const result: Result<StoredRecord, CoreError> =
-      await this.storage.addRecord(command.payload);
-    return result.ok ? { ok: true, value: undefined } : result;
-  };
+  ): Promise<CommandResult<"create-note">> =>
+    this.storage.addRecord(command.payload);
 
   // Updates a note through storage using a named parameter object.
   private updateNote = async (
     command: Extract<Command, { id: "update-note" }>,
-  ): Promise<Result<void, CoreError>> => {
-    const result: Result<StoredRecord, CoreError> =
-      await this.storage.updateRecord({
-        id: command.payload.id,
-        payload: command.payload,
-      });
-    return result.ok ? { ok: true, value: undefined } : result;
-  };
+  ): Promise<CommandResult<"update-note">> =>
+    this.storage.updateRecord({
+      id: command.payload.id,
+      payload: command.payload,
+    });
 
   // Removes a note through storage and keeps the command boundary uniform.
   private removeNote = async (
     command: Extract<Command, { id: "remove-note" }>,
-  ): Promise<Result<void, CoreError>> =>
+  ): Promise<CommandResult<"remove-note">> =>
     this.storage.removeRecord(command.payload.id);
 }
