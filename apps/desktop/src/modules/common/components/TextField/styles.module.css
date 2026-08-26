@@ -1,0 +1,76 @@
+.field {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sub-text);
+  font-weight: var(--font-weight-label);
+}
+
+.control {
+  width: 100%;
+  color: var(--color-text);
+  outline: none;
+}
+
+.control::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.regular {
+  height: var(--control-height-lg);
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-0) var(--space-9);
+  background: var(--color-surface);
+}
+
+.regular:focus {
+  border-color: var(--color-accent);
+  outline: var(--focus-width) solid var(--color-focus);
+}
+
+.borderless {
+  border: var(--space-0);
+  border-radius: var(--radius-xs);
+  padding: var(--space-0);
+  background: var(--color-transparent);
+}
+
+.borderless:focus {
+  outline: none;
+}
+
+.textArea {
+  min-height: var(--control-textarea-min);
+  line-height: var(--line-height-body);
+  scrollbar-color: var(--color-scrollbar-thumb) var(--color-transparent);
+  scrollbar-width: thin;
+}
+
+.fixedSize {
+  resize: none;
+}
+
+.resizable {
+  resize: vertical;
+}
+
+.textArea::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+}
+
+.textArea::-webkit-scrollbar-track {
+  background: var(--color-transparent);
+}
+
+.textArea::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: var(--color-scrollbar-thumb);
+}
+
+.textArea::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-thumb-hover);
+}
