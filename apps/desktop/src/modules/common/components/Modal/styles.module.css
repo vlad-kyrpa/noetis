@@ -1,0 +1,103 @@
+.overlay {
+  position: fixed;
+  inset: var(--space-0);
+  z-index: 100;
+  background: var(--color-backdrop);
+  backdrop-filter: blur(var(--modal-backdrop-blur));
+  animation: overlayFadeIn var(--transition-duration-fast)
+    var(--transition-easing-standard);
+}
+
+.overlay[data-state="closed"] {
+  animation-name: overlayFadeOut;
+}
+
+.content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 101;
+  width: min(var(--modal-width, var(--layout-modal-width)), 100vw - (var(--space-13) * 2));
+  max-width: var(--modal-max-width, 100vw);
+  height: var(--modal-height, auto);
+  max-height: var(--modal-max-height, calc(100vh - var(--space-16)));
+  overflow: auto;
+  transform: translate(-50%, -50%);
+  border: var(
+    --modal-content-border,
+    var(--border-width) solid var(--color-border-strong)
+  );
+  border-radius: var(--modal-content-radius, var(--radius-sm));
+  padding: var(--modal-content-padding, var(--space-11));
+  background: var(--modal-content-background, var(--color-surface-raised));
+  box-shadow: var(--modal-content-shadow, var(--shadow-modal));
+  animation: contentFadeIn var(--transition-duration-fast)
+    var(--transition-easing-standard);
+}
+
+.content:focus {
+  outline: var(--focus-width) solid var(--color-focus);
+}
+
+.content[data-state="closed"] {
+  animation-name: contentFadeOut;
+}
+
+.title {
+  position: absolute;
+  width: var(--layout-sr-only);
+  height: var(--layout-sr-only);
+  padding: var(--space-0);
+  margin: var(--layout-sr-offset);
+  overflow: hidden;
+  white-space: nowrap;
+  border: var(--space-0);
+  clip: rect(0, 0, 0, 0);
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: var(--opacity-hidden);
+  }
+}
+
+@keyframes overlayFadeOut {
+  to {
+    opacity: var(--opacity-hidden);
+  }
+}
+
+@keyframes contentFadeIn {
+  from {
+    opacity: var(--opacity-hidden);
+    transform: translate(-50%, -48%);
+  }
+}
+
+@keyframes contentFadeOut {
+  to {
+    opacity: var(--opacity-hidden);
+    transform: translate(-50%, -48%);
+  }
+}
+
+@media (max-width: 680px) {
+  .content {
+    top: auto;
+    bottom: var(--space-8);
+    width: min(
+      var(--modal-width, var(--layout-modal-width)),
+      100vw - (var(--space-8) * 2)
+    );
+    max-height: var(
+      --modal-max-height,
+      calc(100vh - var(--layout-shell-gutter-mobile))
+    );
+    transform: translateX(-50%);
+  }
+
+  .content[data-state="closed"],
+  .content[data-state="open"] {
+    animation-name: none;
+  }
+}

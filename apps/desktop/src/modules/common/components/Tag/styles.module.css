@@ -1,0 +1,10 @@
+.tag {
+  border: var(--border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-5);
+  color: var(--color-text-muted);
+  background: var(--color-surface-raised);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-label);
+  line-height: var(--line-height-tag);
+}

@@ -1,0 +1,4 @@
+.btnIcon {
+  font-size: var(--control-icon-glyph-size);
+  line-height: var(--line-height-tight);
+}

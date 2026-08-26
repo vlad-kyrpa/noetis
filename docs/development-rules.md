@@ -8,6 +8,8 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Do not use `any`.
 - Do not guess types when creating constants.
 - Define explicit return types for functions and class methods.
+- Prefer inferred types for local implementation details when the assignment makes the type obvious.
+- Do not annotate callback parameters or return values inside `map`, `filter`, `find`, `flatMap`, or similar collection methods unless inference fails or a type predicate is required.
 - Keep shared module types in a `types.ts` file at the module root.
 - Prefer narrow domain types over loose primitives when the value has meaning.
 - No concrete class/function should depend on other concrete class object -> use interfaces.
@@ -80,3 +82,10 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - EVERY function, method, class, and functional unit should have a short intent comment.
 - Comments should explain why the code exists, not restate what the code already says.
 - Include parameter details only when they clarify non-obvious behavior.
+
+## Styling
+
+- Use a black theme by default.
+- Define shared design values as CSS variables in the main global CSS file imported by the app entrypoint.
+- Keep fonts, color palette, border radiuses, spacing, margins, layout sizes, shadows, transitions, and opacity values in global CSS variables.
+- Component styles should consume global CSS variables instead of hard-coded design values.

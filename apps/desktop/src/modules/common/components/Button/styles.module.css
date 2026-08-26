@@ -1,0 +1,79 @@
+.btn {
+  height: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  border: var(--border-width) solid var(--color-transparent);
+  border-radius: var(--radius-sm);
+  place-items: center;
+  padding: var(--space-5) var(--space-9);
+  font: inherit;
+  line-height: var(--line-height-compact);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-duration-fast)
+      var(--transition-easing-standard),
+    border-color var(--transition-duration-fast)
+      var(--transition-easing-standard),
+    color var(--transition-duration-fast) var(--transition-easing-standard);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.btnRegular {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.btnRegular:hover {
+  background: var(--color-surface-hover);
+}
+
+.btnRegular:active {
+  background: var(--color-surface-active);
+}
+
+.btnActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.btnActive:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.btnActive:active {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+}
+
+.btnDanger {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.btnDanger:hover {
+  background: var(--color-danger-hover);
+}
+
+.btnDanger:active {
+  background: var(--color-danger-active);
+}
+
+.btnTransparent {
+  background: var(--color-transparent);
+  color: var(--color-text);
+}
+
+.btnTransparent:hover {
+  background: var(--color-surface-hover);
+}
+
+.btnTransparent:active {
+  background: var(--color-surface-active);
+}
