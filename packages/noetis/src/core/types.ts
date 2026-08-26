@@ -80,6 +80,17 @@ export type RemoveNoteCommand = {
 
 export type Command = CreateNoteCommand | UpdateNoteCommand | RemoveNoteCommand;
 
+export type CommandResultById = {
+  "create-note": StoredRecord;
+  "update-note": StoredRecord;
+  "remove-note": void;
+};
+
+export type CommandResult<Id extends Command["id"]> = Result<
+  CommandResultById[Id],
+  CoreError
+>;
+
 export type Query = {
   text: string;
   tags: string[];

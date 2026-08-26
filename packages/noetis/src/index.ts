@@ -7,6 +7,8 @@ export type {
   Attachment,
   AttachmentId,
   Command,
+  CommandResult,
+  CommandResultById,
   CoreError,
   CoreStorage,
   CreateNoteCommand,

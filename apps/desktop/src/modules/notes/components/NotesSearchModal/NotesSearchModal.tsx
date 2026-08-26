@@ -1,7 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { CoreEngine, CoreError, Query } from "@noetis/noetis";
+import { useNavigate } from "react-router-dom";
 import { Modal, SearchBox } from "@common/components";
+import { useCoreContext } from "@common/contexts/CoreContext";
+import { combineStyles } from "@common/utils/combineClasses";
 import { useDebounce } from "@common/hooks/useDebounce";
 import { NotesSearchResults } from "./NotesSearchResults";
+import { parseSearchQuery } from "./search-query";
 import type { NotesSearchResult } from "./types";
 import styles from "./styles.module.css";
 
@@ -14,106 +19,47 @@ const SEARCH_DEBOUNCE_MS = 250;
 const SEARCH_MODAL_WIDTH = "min(880px, 92vw)";
 const SEARCH_MODAL_HEIGHT = "min(720px, 82vh)";
 
-const STATIC_SEARCH_RESULTS: NotesSearchResult[] = [
-  {
-    id: "daily-review",
-    title: "Daily Review",
-    shortContent: "A quick review of decisions, follow-ups, and loose thoughts.",
-    tags: ["daily", "review"],
-  },
-  {
-    id: "project-noetis",
-    title: "Noetis Project Notes",
-    shortContent: "Ideas for the desktop note flow, search surface, and storage boundaries.",
-    tags: ["project", "desktop"],
-  },
-  {
-    id: "reading-list",
-    title: "Reading List",
-    shortContent: "Papers, essays, and books to revisit when planning knowledge workflows.",
-    tags: ["reading"],
-  },
-  {
-    id: "meeting-design",
-    title: "Design Meeting",
-    shortContent: "Search modal layout decisions, spacing notes, and follow-up UI tasks.",
-    tags: ["meeting", "design"],
-  },
-  {
-    id: "storage-plan",
-    title: "Storage Plan",
-    shortContent: "Draft notes for record indexing, markdown files, and query boundaries.",
-    tags: ["storage", "architecture"],
-  },
-  {
-    id: "keyboard-flow",
-    title: "Keyboard Flow",
-    shortContent: "Ideas for fast note navigation, modal focus, and command shortcuts.",
-    tags: ["ux", "keyboard"],
-  },
-  {
-    id: "tag-cleanup",
-    title: "Tag Cleanup",
-    shortContent: "Possible rules for merging duplicate tags and keeping labels predictable.",
-    tags: ["tags", "cleanup"],
-  },
-  {
-    id: "weekly-plan",
-    title: "Weekly Plan",
-    shortContent: "Priorities for the notes module, search polish, and editor follow-ups.",
-    tags: ["planning", "weekly"],
-  },
-  {
-    id: "modal-states",
-    title: "Modal States",
-    shortContent: "Empty, loading, results, and error state sketches for reusable dialogs.",
-    tags: ["modal", "states"],
-  },
-];
-
-// Checks whether a static note preview matches the debounced search text.
-function matchesSearchQuery({
-  record,
-  query,
-}: {
-  record: NotesSearchResult;
-  query: string;
-}): boolean {
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const searchableText = [
-    record.title,
-    record.shortContent,
-    ...record.tags,
-  ].join(" ");
-
-  return searchableText.toLocaleLowerCase().includes(normalizedQuery);
+interface SearchNotesParams {
+  core: CoreEngine;
+  query: Query;
+  signal: AbortSignal;
+  onResults: (results: NotesSearchResult[]) => void;
+  onError: (error: CoreError) => void;
+  onSettled: () => void;
 }
 
-// Filters static notes while the real query path is still being shaped.
-function getStaticSearchResults(query: string): NotesSearchResult[] {
-  const normalizedQuery = query.trim();
-
-  if (normalizedQuery.length === 0) {
-    return [];
-  }
-
-  return STATIC_SEARCH_RESULTS.filter((record) =>
-    matchesSearchQuery({ record, query: normalizedQuery }),
-  );
-}
-
-// Formats a compact status line for the current static search state.
-function createStatusText({
-  query,
-  resultsCount,
-}: {
+interface StatusTextParams {
+  error: CoreError | null;
+  isLoading: boolean;
   query: string;
   resultsCount: number;
-}): string {
+  warning: string | null;
+}
+
+// Formats a compact status line for the current search state.
+function createStatusText({
+  error,
+  isLoading,
+  query,
+  resultsCount,
+  warning,
+}: StatusTextParams): string {
   const trimmedQuery = query.trim();
 
   if (trimmedQuery.length === 0) {
     return "Start typing to search notes.";
+  }
+
+  if (warning !== null) {
+    return warning;
+  }
+
+  if (error !== null) {
+    return error.message;
+  }
+
+  if (isLoading) {
+    return "Searching notes.";
   }
 
   if (resultsCount === 0) {
@@ -123,24 +69,90 @@ function createStatusText({
   return `${resultsCount} result${resultsCount === 1 ? "" : "s"}`;
 }
 
+// Queries the core engine by text and ignores stale async completions.
+async function searchNotes({
+  core,
+  query,
+  signal,
+  onResults,
+  onError,
+  onSettled,
+}: SearchNotesParams): Promise<void> {
+  const result = await core.query(query);
+
+  if (signal.aborted) {
+    return;
+  }
+
+  if (!result.ok) {
+    onError(result.error);
+    onSettled();
+    return;
+  }
+
+  onResults(result.value);
+  onSettled();
+}
+
 // Provides debounced note search inside a centered transparent modal surface.
 export function NotesSearchModal({
   open,
   onOpenChange,
 }: NotesSearchModalProps): JSX.Element {
+  const { core } = useCoreContext();
+  const navigate = useNavigate();
   const [query, setQuery] = useState<string>("");
+  const [results, setResults] = useState<NotesSearchResult[]>([]);
+  const [error, setError] = useState<CoreError | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const debouncedQuery = useDebounce({
     value: query,
     delayMs: SEARCH_DEBOUNCE_MS,
   });
-  const results = useMemo<NotesSearchResult[]>(
-    () => getStaticSearchResults(debouncedQuery),
+  const parsedQuery = useMemo(
+    () => parseSearchQuery(debouncedQuery),
     [debouncedQuery],
   );
+  const validationWarning = parsedQuery.ok ? null : parsedQuery.warning;
   const statusText = createStatusText({
+    error,
+    isLoading,
     query: debouncedQuery,
     resultsCount: results.length,
+    warning: validationWarning,
   });
+
+  useEffect(() => {
+    const trimmedQuery = debouncedQuery.trim();
+
+    if (!open || trimmedQuery.length === 0 || !parsedQuery.ok) {
+      setResults([]);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    setIsLoading(true);
+    setError(null);
+    void searchNotes({
+      core,
+      query: parsedQuery.query,
+      signal: controller.signal,
+      onResults: setResults,
+      onError: setError,
+      onSettled: () => setIsLoading(false),
+    });
+
+    return () => controller.abort();
+  }, [core, debouncedQuery, open, parsedQuery]);
+
+  // Opens the selected note route and dismisses search.
+  function handleSelectResult(result: NotesSearchResult): void {
+    navigate(`/notes/${encodeURIComponent(result.id)}`);
+    onOpenChange(false);
+  }
 
   return (
     <Modal
@@ -158,9 +170,16 @@ export function NotesSearchModal({
           placeholder="Search notes"
           value={query}
         />
-        <p className={styles.status}>{statusText}</p>
+        <p
+          className={combineStyles(
+            styles.status,
+            validationWarning === null ? null : styles.warning,
+          )}
+        >
+          {statusText}
+        </p>
       </div>
-      <NotesSearchResults results={results} />
+      <NotesSearchResults onSelect={handleSelectResult} results={results} />
     </Modal>
   );
 }
