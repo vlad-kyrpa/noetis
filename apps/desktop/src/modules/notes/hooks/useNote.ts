@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { CommandId } from "@noetis/noetis";
 import type {
   CoreEngine,
   CoreError,
@@ -168,7 +169,7 @@ export function useNote({
   // Creates a new note and reports the created id to the route owner.
   const createNote = useCallback(async (): Promise<void> => {
     const result = await core.run({
-      id: "create-note",
+      id: CommandId.CreateNote,
       payload: {
         title: note.title,
         content: note.body,
@@ -194,7 +195,7 @@ export function useNote({
     }
 
     const result = await core.run({
-      id: "update-note",
+      id: CommandId.UpdateNote,
       payload: {
         id: noteId,
         title: note.title,
@@ -241,7 +242,7 @@ export function useNote({
     setError(null);
 
     const result = await core.run({
-      id: "remove-note",
+      id: CommandId.RemoveNote,
       payload: { id: noteId },
     });
 

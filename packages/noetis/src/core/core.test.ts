@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { CoreEngine } from "./core";
+import { CommandId } from "./types";
 import {
   MOCK_NOTE_ID,
   MOCK_STORAGE_FAILURE,
@@ -45,7 +46,7 @@ describe("CoreEngine", () => {
 
       engine.addStateUpdateCallback(callback);
       const result: Result<StoredRecord, CoreError> = await engine.run({
-        id: "create-note",
+        id: CommandId.CreateNote,
         payload,
       });
 
@@ -68,7 +69,7 @@ describe("CoreEngine", () => {
 
       engine.addStateUpdateCallback(callback);
       const result: Result<void, CoreError> = await engine.run({
-        id: "remove-note",
+        id: CommandId.RemoveNote,
         payload: { id: MOCK_NOTE_ID },
       });
 
@@ -89,7 +90,7 @@ describe("CoreEngine", () => {
       });
 
       const result: Result<StoredRecord, CoreError> = await engine.run({
-        id: "update-note",
+        id: CommandId.UpdateNote,
         payload: {
           id: MOCK_NOTE_ID,
           title: "Updated",
@@ -135,7 +136,7 @@ describe("CoreEngine", () => {
 
       const createResult: Result<StoredQueryItem, CoreError> =
         await engine.run({
-          id: "create-stored-query",
+          id: CommandId.CreateStoredQuery,
           payload: {
             query: {
               name: "Daily",
@@ -145,7 +146,7 @@ describe("CoreEngine", () => {
         });
       const updateResult: Result<StoredQueryItem, CoreError> =
         await engine.run({
-          id: "update-stored-query",
+          id: CommandId.UpdateStoredQuery,
           payload: {
             id: "stored-query-1",
             query: {
@@ -155,7 +156,7 @@ describe("CoreEngine", () => {
           },
         });
       const removeResult: Result<void, CoreError> = await engine.run({
-        id: "remove-stored-query",
+        id: CommandId.RemoveStoredQuery,
         payload: { id: "stored-query-1" },
       });
 
@@ -218,19 +219,19 @@ describe("CoreEngine", () => {
 
       const createResult: Result<StoredQueryContainer, CoreError> =
         await engine.run({
-          id: "create-stored-query-container",
+          id: CommandId.CreateStoredQueryContainer,
           payload: { container: { name: "Work" } },
         });
       const updateResult: Result<StoredQueryContainer, CoreError> =
         await engine.run({
-          id: "update-stored-query-container",
+          id: CommandId.UpdateStoredQueryContainer,
           payload: {
             id: "stored-query-container-1",
             container: { name: "Work" },
           },
         });
       const removeResult: Result<void, CoreError> = await engine.run({
-        id: "remove-stored-query-container",
+        id: CommandId.RemoveStoredQueryContainer,
         payload: { id: "stored-query-container-1" },
       });
 
@@ -270,7 +271,7 @@ describe("CoreEngine", () => {
 
       engine.addStateUpdateCallback(callback);
       const result: Result<StoredQueryContainer, CoreError> = await engine.run({
-        id: "create-stored-query-container",
+        id: CommandId.CreateStoredQueryContainer,
         payload: { container: { name: "Work" } },
       });
 
@@ -333,7 +334,7 @@ describe("CoreEngine", () => {
 
       engine.addStateUpdateCallback(callback);
       await engine.run({
-        id: "remove-note",
+        id: CommandId.RemoveNote,
         payload: { id: MOCK_NOTE_ID },
       });
 
@@ -353,7 +354,7 @@ describe("CoreEngine", () => {
       engine.addStateUpdateCallback(removedCallback);
       engine.removeStateUpdateCallback(removedCallback);
       await engine.run({
-        id: "remove-note",
+        id: CommandId.RemoveNote,
         payload: { id: MOCK_NOTE_ID },
       });
 

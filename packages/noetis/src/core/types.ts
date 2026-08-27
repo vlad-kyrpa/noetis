@@ -97,7 +97,7 @@ export type CreateNotePayload = {
 };
 
 export type CreateNoteCommand = {
-  id: "create-note";
+  id: CommandId.CreateNote;
   payload: CreateNotePayload;
 };
 
@@ -110,7 +110,7 @@ export type UpdateNotePayload = {
 };
 
 export type UpdateNoteCommand = {
-  id: "update-note";
+  id: CommandId.UpdateNote;
   payload: UpdateNotePayload;
 };
 
@@ -118,8 +118,32 @@ export type RemoveNotePayload = {
   id: NoteId;
 };
 
+export enum CommandId {
+  CreateNote = "create-note",
+  UpdateNote = "update-note",
+  RemoveNote = "remove-note",
+  CreateStoredQuery = "create-stored-query",
+  CreateStoredQueryContainer = "create-stored-query-container",
+  UpdateStoredQueryContainer = "update-stored-query-container",
+  RemoveStoredQueryContainer = "remove-stored-query-container",
+  UpdateStoredQuery = "update-stored-query",
+  RemoveStoredQuery = "remove-stored-query",
+}
+
+export type CommandResultById = {
+  [CommandId.CreateNote]: StoredRecord;
+  [CommandId.UpdateNote]: StoredRecord;
+  [CommandId.RemoveNote]: void;
+  [CommandId.CreateStoredQuery]: StoredQueryItem;
+  [CommandId.CreateStoredQueryContainer]: StoredQueryContainer;
+  [CommandId.UpdateStoredQueryContainer]: StoredQueryContainer;
+  [CommandId.RemoveStoredQueryContainer]: void;
+  [CommandId.UpdateStoredQuery]: StoredQueryItem;
+  [CommandId.RemoveStoredQuery]: void;
+};
+
 export type RemoveNoteCommand = {
-  id: "remove-note";
+  id: CommandId.RemoveNote;
   payload: RemoveNotePayload;
 };
 
@@ -129,7 +153,7 @@ export type CreateStoredQueryPayload = {
 };
 
 export type CreateStoredQueryCommand = {
-  id: "create-stored-query";
+  id: CommandId.CreateStoredQuery;
   payload: CreateStoredQueryPayload;
 };
 
@@ -138,7 +162,7 @@ export type CreateStoredQueryContainerPayload = {
 };
 
 export type CreateStoredQueryContainerCommand = {
-  id: "create-stored-query-container";
+  id: CommandId.CreateStoredQueryContainer;
   payload: CreateStoredQueryContainerPayload;
 };
 
@@ -148,7 +172,7 @@ export type UpdateStoredQueryContainerPayload = {
 };
 
 export type UpdateStoredQueryContainerCommand = {
-  id: "update-stored-query-container";
+  id: CommandId.UpdateStoredQueryContainer;
   payload: UpdateStoredQueryContainerPayload;
 };
 
@@ -157,7 +181,7 @@ export type RemoveStoredQueryContainerPayload = {
 };
 
 export type RemoveStoredQueryContainerCommand = {
-  id: "remove-stored-query-container";
+  id: CommandId.RemoveStoredQueryContainer;
   payload: RemoveStoredQueryContainerPayload;
 };
 
@@ -167,7 +191,7 @@ export type UpdateStoredQueryPayload = {
 };
 
 export type UpdateStoredQueryCommand = {
-  id: "update-stored-query";
+  id: CommandId.UpdateStoredQuery;
   payload: UpdateStoredQueryPayload;
 };
 
@@ -176,7 +200,7 @@ export type RemoveStoredQueryPayload = {
 };
 
 export type RemoveStoredQueryCommand = {
-  id: "remove-stored-query";
+  id: CommandId.RemoveStoredQuery;
   payload: RemoveStoredQueryPayload;
 };
 
@@ -190,18 +214,6 @@ export type Command =
   | RemoveStoredQueryContainerCommand
   | UpdateStoredQueryCommand
   | RemoveStoredQueryCommand;
-
-export type CommandResultById = {
-  "create-note": StoredRecord;
-  "update-note": StoredRecord;
-  "remove-note": void;
-  "create-stored-query": StoredQueryItem;
-  "create-stored-query-container": StoredQueryContainer;
-  "update-stored-query-container": StoredQueryContainer;
-  "remove-stored-query-container": void;
-  "update-stored-query": StoredQueryItem;
-  "remove-stored-query": void;
-};
 
 export type CommandResult<Id extends Command["id"]> = Result<
   CommandResultById[Id],
