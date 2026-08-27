@@ -10,6 +10,33 @@ export type NoteId = string;
 
 export type AttachmentId = string;
 
+export type StoredQueryId = string;
+
+export type StoredQuery = {
+  tags: string[];
+};
+
+export type StoredQueryPayload = {
+  name: string;
+  query: StoredQuery;
+};
+
+export type StoredQueryItem = {
+  id: StoredQueryId;
+  name: string;
+  query: StoredQuery;
+};
+
+export type StoredQueryContainer = {
+  id: StoredQueryId;
+  name: string;
+  queries: StoredQueryItem[];
+};
+
+export type StoredQueryContainerPayload = {
+  name: string;
+};
+
 export type UpdateStoredRecordParams = {
   id: NoteId;
   payload: UpdateNotePayload;
@@ -42,6 +69,24 @@ export interface CoreStorage {
   findRecords: (
     query: Query,
   ) => Promise<Result<StoredRecordHeader[], CoreError>>;
+  createStoredQuery: (
+    payload: CreateStoredQueryPayload,
+  ) => Promise<Result<StoredQueryItem, CoreError>>;
+  createStoredQueryContainer: (
+    payload: CreateStoredQueryContainerPayload,
+  ) => Promise<Result<StoredQueryContainer, CoreError>>;
+  updateStoredQueryContainer: (
+    payload: UpdateStoredQueryContainerPayload,
+  ) => Promise<Result<StoredQueryContainer, CoreError>>;
+  removeStoredQueryContainer: (
+    payload: RemoveStoredQueryContainerPayload,
+  ) => Promise<Result<void, CoreError>>;
+  updateStoredQuery: (
+    payload: UpdateStoredQueryPayload,
+  ) => Promise<Result<StoredQueryItem, CoreError>>;
+  removeStoredQuery: (
+    payload: RemoveStoredQueryPayload,
+  ) => Promise<Result<void, CoreError>>;
 }
 
 export type CreateNotePayload = {
@@ -78,12 +123,84 @@ export type RemoveNoteCommand = {
   payload: RemoveNotePayload;
 };
 
-export type Command = CreateNoteCommand | UpdateNoteCommand | RemoveNoteCommand;
+export type CreateStoredQueryPayload = {
+  containerId?: StoredQueryId;
+  query: StoredQueryPayload;
+};
+
+export type CreateStoredQueryCommand = {
+  id: "create-stored-query";
+  payload: CreateStoredQueryPayload;
+};
+
+export type CreateStoredQueryContainerPayload = {
+  container: StoredQueryContainerPayload;
+};
+
+export type CreateStoredQueryContainerCommand = {
+  id: "create-stored-query-container";
+  payload: CreateStoredQueryContainerPayload;
+};
+
+export type UpdateStoredQueryContainerPayload = {
+  id: StoredQueryId;
+  container: StoredQueryContainerPayload;
+};
+
+export type UpdateStoredQueryContainerCommand = {
+  id: "update-stored-query-container";
+  payload: UpdateStoredQueryContainerPayload;
+};
+
+export type RemoveStoredQueryContainerPayload = {
+  id: StoredQueryId;
+};
+
+export type RemoveStoredQueryContainerCommand = {
+  id: "remove-stored-query-container";
+  payload: RemoveStoredQueryContainerPayload;
+};
+
+export type UpdateStoredQueryPayload = {
+  id: StoredQueryId;
+  query: StoredQueryPayload;
+};
+
+export type UpdateStoredQueryCommand = {
+  id: "update-stored-query";
+  payload: UpdateStoredQueryPayload;
+};
+
+export type RemoveStoredQueryPayload = {
+  id: StoredQueryId;
+};
+
+export type RemoveStoredQueryCommand = {
+  id: "remove-stored-query";
+  payload: RemoveStoredQueryPayload;
+};
+
+export type Command =
+  | CreateNoteCommand
+  | UpdateNoteCommand
+  | RemoveNoteCommand
+  | CreateStoredQueryCommand
+  | CreateStoredQueryContainerCommand
+  | UpdateStoredQueryContainerCommand
+  | RemoveStoredQueryContainerCommand
+  | UpdateStoredQueryCommand
+  | RemoveStoredQueryCommand;
 
 export type CommandResultById = {
   "create-note": StoredRecord;
   "update-note": StoredRecord;
   "remove-note": void;
+  "create-stored-query": StoredQueryItem;
+  "create-stored-query-container": StoredQueryContainer;
+  "update-stored-query-container": StoredQueryContainer;
+  "remove-stored-query-container": void;
+  "update-stored-query": StoredQueryItem;
+  "remove-stored-query": void;
 };
 
 export type CommandResult<Id extends Command["id"]> = Result<

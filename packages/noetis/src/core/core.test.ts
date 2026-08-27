@@ -5,6 +5,8 @@ import {
   MOCK_STORAGE_FAILURE,
   MOCK_STORED_RECORD,
   MOCK_STORED_RECORD_HEADER,
+  MOCK_STORED_QUERY_CONTAINER,
+  MOCK_STORED_QUERY_ITEM,
   createMockCoreStorage,
 } from "./utils/test-utils";
 import type {
@@ -15,6 +17,8 @@ import type {
   Result,
   StoredRecord,
   StoredRecordHeader,
+  StoredQueryContainer,
+  StoredQueryItem,
   UpdateStoredRecordParams,
 } from "./types";
 
@@ -100,6 +104,178 @@ describe("CoreEngine", () => {
         id: MOCK_NOTE_ID,
         payload: expect.objectContaining({ id: MOCK_NOTE_ID }),
       } satisfies UpdateStoredRecordParams);
+    });
+
+    it("routes stored query item commands to storage", async () => {
+      const createStoredQuery: CoreStorage["createStoredQuery"] = vi.fn(
+        async (): Promise<Result<StoredQueryItem, CoreError>> => ({
+          ok: true,
+          value: MOCK_STORED_QUERY_ITEM,
+        }),
+      );
+      const updateStoredQuery: CoreStorage["updateStoredQuery"] = vi.fn(
+        async (): Promise<Result<StoredQueryItem, CoreError>> => ({
+          ok: true,
+          value: MOCK_STORED_QUERY_ITEM,
+        }),
+      );
+      const removeStoredQuery: CoreStorage["removeStoredQuery"] = vi.fn(
+        async (): Promise<Result<void, CoreError>> => ({
+          ok: true,
+          value: undefined,
+        }),
+      );
+      const engine: CoreEngine = new CoreEngine({
+        storage: createMockCoreStorage({
+          createStoredQuery,
+          updateStoredQuery,
+          removeStoredQuery,
+        }),
+      });
+
+      const createResult: Result<StoredQueryItem, CoreError> =
+        await engine.run({
+          id: "create-stored-query",
+          payload: {
+            query: {
+              name: "Daily",
+              query: { tags: ["daily"] },
+            },
+          },
+        });
+      const updateResult: Result<StoredQueryItem, CoreError> =
+        await engine.run({
+          id: "update-stored-query",
+          payload: {
+            id: "stored-query-1",
+            query: {
+              name: "Daily",
+              query: { tags: ["daily"] },
+            },
+          },
+        });
+      const removeResult: Result<void, CoreError> = await engine.run({
+        id: "remove-stored-query",
+        payload: { id: "stored-query-1" },
+      });
+
+      expect(createResult).toEqual({
+        ok: true,
+        value: MOCK_STORED_QUERY_ITEM,
+      });
+      expect(updateResult).toEqual({
+        ok: true,
+        value: MOCK_STORED_QUERY_ITEM,
+      });
+      expect(removeResult).toEqual({ ok: true, value: undefined });
+      expect(createStoredQuery).toHaveBeenCalledWith({
+        query: {
+          name: "Daily",
+          query: { tags: ["daily"] },
+        },
+      });
+      expect(updateStoredQuery).toHaveBeenCalledWith({
+        id: "stored-query-1",
+        query: {
+          name: "Daily",
+          query: { tags: ["daily"] },
+        },
+      });
+      expect(removeStoredQuery).toHaveBeenCalledWith({
+        id: "stored-query-1",
+      });
+    });
+
+    it("routes stored query container commands to storage", async () => {
+      const createStoredQueryContainer: CoreStorage["createStoredQueryContainer"] =
+        vi.fn(
+          async (): Promise<Result<StoredQueryContainer, CoreError>> => ({
+            ok: true,
+            value: MOCK_STORED_QUERY_CONTAINER,
+          }),
+        );
+      const updateStoredQueryContainer: CoreStorage["updateStoredQueryContainer"] =
+        vi.fn(
+          async (): Promise<Result<StoredQueryContainer, CoreError>> => ({
+            ok: true,
+            value: MOCK_STORED_QUERY_CONTAINER,
+          }),
+        );
+      const removeStoredQueryContainer: CoreStorage["removeStoredQueryContainer"] =
+        vi.fn(
+          async (): Promise<Result<void, CoreError>> => ({
+            ok: true,
+            value: undefined,
+          }),
+        );
+      const engine: CoreEngine = new CoreEngine({
+        storage: createMockCoreStorage({
+          createStoredQueryContainer,
+          updateStoredQueryContainer,
+          removeStoredQueryContainer,
+        }),
+      });
+
+      const createResult: Result<StoredQueryContainer, CoreError> =
+        await engine.run({
+          id: "create-stored-query-container",
+          payload: { container: { name: "Work" } },
+        });
+      const updateResult: Result<StoredQueryContainer, CoreError> =
+        await engine.run({
+          id: "update-stored-query-container",
+          payload: {
+            id: "stored-query-container-1",
+            container: { name: "Work" },
+          },
+        });
+      const removeResult: Result<void, CoreError> = await engine.run({
+        id: "remove-stored-query-container",
+        payload: { id: "stored-query-container-1" },
+      });
+
+      expect(createResult).toEqual({
+        ok: true,
+        value: MOCK_STORED_QUERY_CONTAINER,
+      });
+      expect(updateResult).toEqual({
+        ok: true,
+        value: MOCK_STORED_QUERY_CONTAINER,
+      });
+      expect(removeResult).toEqual({ ok: true, value: undefined });
+      expect(createStoredQueryContainer).toHaveBeenCalledWith({
+        container: { name: "Work" },
+      });
+      expect(updateStoredQueryContainer).toHaveBeenCalledWith({
+        id: "stored-query-container-1",
+        container: { name: "Work" },
+      });
+      expect(removeStoredQueryContainer).toHaveBeenCalledWith({
+        id: "stored-query-container-1",
+      });
+    });
+
+    it("does not notify subscribers when stored query commands fail", async () => {
+      const createStoredQueryContainer: CoreStorage["createStoredQueryContainer"] =
+        vi.fn(
+          async (): Promise<Result<StoredQueryContainer, CoreError>> => ({
+            ok: false,
+            error: MOCK_STORAGE_FAILURE,
+          }),
+        );
+      const callback: () => void = vi.fn((): void => undefined);
+      const engine: CoreEngine = new CoreEngine({
+        storage: createMockCoreStorage({ createStoredQueryContainer }),
+      });
+
+      engine.addStateUpdateCallback(callback);
+      const result: Result<StoredQueryContainer, CoreError> = await engine.run({
+        id: "create-stored-query-container",
+        payload: { container: { name: "Work" } },
+      });
+
+      expect(result).toEqual({ ok: false, error: MOCK_STORAGE_FAILURE });
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 

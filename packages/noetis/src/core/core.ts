@@ -38,6 +38,12 @@ export class CoreEngine {
       "create-note": this.createNote,
       "update-note": this.updateNote,
       "remove-note": this.removeNote,
+      "create-stored-query": this.createStoredQuery,
+      "create-stored-query-container": this.createStoredQueryContainer,
+      "update-stored-query-container": this.updateStoredQueryContainer,
+      "remove-stored-query-container": this.removeStoredQueryContainer,
+      "update-stored-query": this.updateStoredQuery,
+      "remove-stored-query": this.removeStoredQuery,
     };
   }
 
@@ -102,4 +108,40 @@ export class CoreEngine {
     command: Extract<Command, { id: "remove-note" }>,
   ): Promise<CommandResult<"remove-note">> =>
     this.storage.removeRecord(command.payload.id);
+
+  // Creates a stored query item through storage.
+  private createStoredQuery = async (
+    command: Extract<Command, { id: "create-stored-query" }>,
+  ): Promise<CommandResult<"create-stored-query">> =>
+    this.storage.createStoredQuery(command.payload);
+
+  // Creates a stored query container through storage.
+  private createStoredQueryContainer = async (
+    command: Extract<Command, { id: "create-stored-query-container" }>,
+  ): Promise<CommandResult<"create-stored-query-container">> =>
+    this.storage.createStoredQueryContainer(command.payload);
+
+  // Updates a stored query container through storage.
+  private updateStoredQueryContainer = async (
+    command: Extract<Command, { id: "update-stored-query-container" }>,
+  ): Promise<CommandResult<"update-stored-query-container">> =>
+    this.storage.updateStoredQueryContainer(command.payload);
+
+  // Removes a stored query container through storage.
+  private removeStoredQueryContainer = async (
+    command: Extract<Command, { id: "remove-stored-query-container" }>,
+  ): Promise<CommandResult<"remove-stored-query-container">> =>
+    this.storage.removeStoredQueryContainer(command.payload);
+
+  // Updates a stored query item through storage.
+  private updateStoredQuery = async (
+    command: Extract<Command, { id: "update-stored-query" }>,
+  ): Promise<CommandResult<"update-stored-query">> =>
+    this.storage.updateStoredQuery(command.payload);
+
+  // Removes a stored query item through storage.
+  private removeStoredQuery = async (
+    command: Extract<Command, { id: "remove-stored-query" }>,
+  ): Promise<CommandResult<"remove-stored-query">> =>
+    this.storage.removeStoredQuery(command.payload);
 }

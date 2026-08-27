@@ -3,152 +3,20 @@ import { FileStorage } from "./file-storage";
 import type {
   CoreError,
   CreateNotePayload,
-  FileSystemAdapter,
   Result,
   StoredRecord,
   StoredRecordHeader,
 } from "./types";
-import type { Logger } from "./logger";
+import {
+  InMemoryFileSystemAdapter,
+  MOCK_ROOT_PATH,
+  TestLogger,
+} from "./utils/test-utils";
 
-const ROOT_PATH = "/notes";
+const ROOT_PATH = MOCK_ROOT_PATH;
 const CREATED_AT = new Date("2026-08-15T00:00:00.000Z");
 const UPDATED_AT = new Date("2026-08-15T01:00:00.000Z");
 const CONTENT_SEPARATOR = "\n---\n";
-
-type LogEntry = {
-  message: string;
-  data: Record<string, unknown>;
-};
-
-// Provides a deterministic filesystem boundary for file storage behavior tests.
-class InMemoryFileSystemAdapter implements FileSystemAdapter {
-  private readonly files: Map<string, string>;
-  private readonly directories: Set<string>;
-
-  // Seeds the root directory plus any requested files.
-  constructor(files: Record<string, string> = {}) {
-    this.files = new Map(
-      Object.entries(files).map(([path, content]) => [
-        this.normalize(path),
-        content,
-      ]),
-    );
-    this.directories = new Set([ROOT_PATH, `${ROOT_PATH}/records`]);
-  }
-
-  // Checks whether a path exists as either a file or directory.
-  async isExists(path: string): Promise<boolean> {
-    const normalizedPath = this.normalize(path);
-    return (
-      this.files.has(normalizedPath) || this.directories.has(normalizedPath)
-    );
-  }
-
-  // Checks whether a path points to a seeded or written file.
-  async isFile(path: string): Promise<boolean> {
-    return this.files.has(this.normalize(path));
-  }
-
-  // Checks whether a path points to a known directory.
-  async isDirectory(path: string): Promise<boolean> {
-    return this.directories.has(this.normalize(path));
-  }
-
-  // Lists direct children for storage scans.
-  async getDirectoryContent(directoryPath: string): Promise<readonly string[]> {
-    const normalizedDirectoryPath = this.normalize(directoryPath);
-    const childPrefix = `${normalizedDirectoryPath}/`;
-    const paths = [
-      ...Array.from(this.directories),
-      ...Array.from(this.files.keys()),
-    ];
-
-    return paths.filter((path) => {
-      const isChild = path.startsWith(childPrefix);
-      const childPath = path.slice(childPrefix.length);
-      return isChild && childPath.length > 0 && !childPath.includes("/");
-    });
-  }
-
-  // Reads file content by normalized path.
-  async getFileContent(path: string): Promise<string> {
-    return this.files.get(this.normalize(path)) ?? "";
-  }
-
-  // Writes file content by normalized path.
-  async writeFileContent(path: string, content: string): Promise<void> {
-    this.files.set(this.normalize(path), content);
-  }
-
-  // Removes a file by normalized path.
-  async removeFile(path: string): Promise<void> {
-    this.files.delete(this.normalize(path));
-  }
-
-  // Creates a directory path and its missing parents.
-  async createDirectory(path: string): Promise<void> {
-    const normalizedPath = this.normalize(path);
-    const parts = normalizedPath.split("/").filter((part) => part.length > 0);
-    let currentPath = normalizedPath.startsWith("/") ? "/" : "";
-
-    parts.forEach((part) => {
-      currentPath = this.normalize(`${currentPath}/${part}`);
-      this.directories.add(currentPath);
-    });
-  }
-
-  // Returns the configured root directory.
-  async getRootDirectory(): Promise<string> {
-    return ROOT_PATH;
-  }
-
-  // Converts an absolute path to a path relative to the root directory.
-  async getRelativePath(path: string): Promise<string> {
-    return this.normalize(path).slice(ROOT_PATH.length + 1);
-  }
-
-  // Returns the parent directory for a file path.
-  async getDirectoryName(path: string): Promise<string> {
-    const normalizedPath = this.normalize(path);
-    return normalizedPath.slice(0, normalizedPath.lastIndexOf("/"));
-  }
-
-  // Combines path segments with slash normalization.
-  async combinePaths(parts: readonly string[]): Promise<string> {
-    return this.normalize(parts.join("/"));
-  }
-
-  // Normalizes Windows and repeated separators for deterministic assertions.
-  private normalize(path: string): string {
-    return path.replace(/\\/g, "/").replace(/\/+/g, "/");
-  }
-}
-
-// Captures storage logs without writing to the real console.
-class TestLogger implements Logger {
-  readonly infoEntries: LogEntry[] = [];
-  readonly errorEntries: LogEntry[] = [];
-  readonly warnEntries: LogEntry[] = [];
-  readonly debugEntries: LogEntry[] = [];
-
-  // Captures info-level storage logs.
-  info(entry: LogEntry): void {
-    this.infoEntries.push(entry);
-  }
-
-  // Captures error-level storage logs.
-  error(entry: LogEntry): void {
-    this.errorEntries.push(entry);
-  }
-
-  warn(entry: LogEntry): void {
-    this.warnEntries.push(entry);
-  }
-
-  debug(entry: LogEntry): void {
-    this.debugEntries.push(entry);
-  }
-}
 
 // Builds the storage under test with a typed in-memory filesystem.
 function createStorage(files: Record<string, string> = {}): {
@@ -202,6 +70,15 @@ async function readIndex(
   fileSystem: InMemoryFileSystemAdapter,
 ): Promise<unknown> {
   return JSON.parse(await fileSystem.getFileContent(`${ROOT_PATH}/index.json`));
+}
+
+// Reads stored query containers from the single JSON file.
+async function readStoredQueryContainers(
+  fileSystem: InMemoryFileSystemAdapter,
+): Promise<unknown> {
+  return JSON.parse(
+    await fileSystem.getFileContent(`${ROOT_PATH}/stored-queries.json`),
+  );
 }
 
 describe("FileStorage", () => {
@@ -466,6 +343,393 @@ describe("FileStorage", () => {
       expect(await readIndex(fileSystem)).toEqual([
         { id: "note-1", title: "Coffee", tags: ["daily"] },
       ]);
+    });
+  });
+
+  describe("createStoredQuery", () => {
+    it("creates the default container when the file is missing", async () => {
+      const { storage, fileSystem } = createStorage();
+
+      const result = await storage.createStoredQuery({
+        query: {
+          name: "  Daily  ",
+          query: { tags: ["daily notes"] },
+        },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          id: expect.any(String),
+          name: "Daily",
+          query: { tags: ["daily", "notes"] },
+        },
+      });
+
+      if (!result.ok) {
+        throw new Error("Expected createStoredQuery to succeed.");
+      }
+
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        {
+          id: expect.any(String),
+          name: "Stored Queries",
+          queries: [result.value],
+        },
+      ]);
+    });
+
+    it("adds a query to the requested container", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+          { id: "container-2", name: "Work", queries: [] },
+        ]),
+      });
+
+      const result = await storage.createStoredQuery({
+        containerId: "container-2",
+        query: {
+          name: "Roadmap",
+          query: { tags: ["project"] },
+        },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          id: expect.any(String),
+          name: "Roadmap",
+          query: { tags: ["project"] },
+        },
+      });
+
+      if (!result.ok) {
+        throw new Error("Expected createStoredQuery to succeed.");
+      }
+
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        { id: "container-1", name: "Stored Queries", queries: [] },
+        { id: "container-2", name: "Work", queries: [result.value] },
+      ]);
+    });
+
+    it("returns not found when the requested container is missing", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+        ]),
+      });
+
+      const result = await storage.createStoredQuery({
+        containerId: "missing",
+        query: {
+          name: "Missing",
+          query: { tags: [] },
+        },
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          code: "record-not-found",
+          message: 'Record "missing" was not found.',
+        },
+      });
+    });
+  });
+
+  describe("createStoredQueryContainer", () => {
+    it("preserves the default container when creating the first custom container", async () => {
+      const { storage, fileSystem } = createStorage();
+
+      const result = await storage.createStoredQueryContainer({
+        container: { name: "  Work  " },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          id: expect.any(String),
+          name: "Work",
+          queries: [],
+        },
+      });
+
+      if (!result.ok) {
+        throw new Error("Expected createStoredQueryContainer to succeed.");
+      }
+
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        {
+          id: expect.any(String),
+          name: "Stored Queries",
+          queries: [],
+        },
+        result.value,
+      ]);
+    });
+  });
+
+  describe("updateStoredQueryContainer", () => {
+    it("renames a container while preserving its queries", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          {
+            id: "container-1",
+            name: "Old",
+            queries: [
+              {
+                id: "query-1",
+                name: "Daily",
+                query: { tags: ["daily"] },
+              },
+            ],
+          },
+        ]),
+      });
+
+      const result = await storage.updateStoredQueryContainer({
+        id: "container-1",
+        container: { name: "  New  " },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          id: "container-1",
+          name: "New",
+          queries: [
+            {
+              id: "query-1",
+              name: "Daily",
+              query: { tags: ["daily"] },
+            },
+          ],
+        },
+      });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        result.ok ? result.value : undefined,
+      ]);
+    });
+
+    it("returns not found when the container does not exist", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+        ]),
+      });
+
+      const result = await storage.updateStoredQueryContainer({
+        id: "missing",
+        container: { name: "Missing" },
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          code: "record-not-found",
+          message: 'Record "missing" was not found.',
+        },
+      });
+    });
+  });
+
+  describe("removeStoredQueryContainer", () => {
+    it("removes a container and the queries it owns", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          {
+            id: "container-1",
+            name: "Stored Queries",
+            queries: [
+              {
+                id: "query-1",
+                name: "Daily",
+                query: { tags: ["daily"] },
+              },
+            ],
+          },
+          {
+            id: "container-2",
+            name: "Work",
+            queries: [
+              {
+                id: "query-2",
+                name: "Roadmap",
+                query: { tags: ["project"] },
+              },
+            ],
+          },
+        ]),
+      });
+
+      const result = await storage.removeStoredQueryContainer({
+        id: "container-2",
+      });
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        {
+          id: "container-1",
+          name: "Stored Queries",
+          queries: [
+            {
+              id: "query-1",
+              name: "Daily",
+              query: { tags: ["daily"] },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it("returns not found when the container does not exist", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+        ]),
+      });
+
+      const result = await storage.removeStoredQueryContainer({
+        id: "missing",
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          code: "record-not-found",
+          message: 'Record "missing" was not found.',
+        },
+      });
+    });
+  });
+
+  describe("updateStoredQuery", () => {
+    it("updates a query in its owning container and normalizes tags", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          {
+            id: "container-1",
+            name: "Stored Queries",
+            queries: [
+              {
+                id: "query-1",
+                name: "Old",
+                query: { tags: ["old"] },
+              },
+            ],
+          },
+        ]),
+      });
+
+      const result = await storage.updateStoredQuery({
+        id: "query-1",
+        query: {
+          name: "  New  ",
+          query: { tags: ["daily notes"] },
+        },
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          id: "query-1",
+          name: "New",
+          query: { tags: ["daily", "notes"] },
+        },
+      });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        {
+          id: "container-1",
+          name: "Stored Queries",
+          queries: [result.ok ? result.value : undefined],
+        },
+      ]);
+    });
+
+    it("returns not found when the query does not exist", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+        ]),
+      });
+
+      const result = await storage.updateStoredQuery({
+        id: "missing",
+        query: {
+          name: "Missing",
+          query: { tags: [] },
+        },
+      });
+
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          code: "record-not-found",
+          message: 'Record "missing" was not found.',
+        },
+      });
+    });
+  });
+
+  describe("removeStoredQuery", () => {
+    it("removes only the matching query from its owning container", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          {
+            id: "container-1",
+            name: "Stored Queries",
+            queries: [
+              {
+                id: "query-1",
+                name: "Daily",
+                query: { tags: ["daily"] },
+              },
+              {
+                id: "query-2",
+                name: "Roadmap",
+                query: { tags: ["project"] },
+              },
+            ],
+          },
+        ]),
+      });
+
+      const result = await storage.removeStoredQuery({ id: "query-1" });
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual([
+        {
+          id: "container-1",
+          name: "Stored Queries",
+          queries: [
+            {
+              id: "query-2",
+              name: "Roadmap",
+              query: { tags: ["project"] },
+            },
+          ],
+        },
+      ]);
+    });
+
+    it("returns not found when the query does not exist", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          { id: "container-1", name: "Stored Queries", queries: [] },
+        ]),
+      });
+
+      const result = await storage.removeStoredQuery({ id: "missing" });
+
+      expect(result).toEqual({
+        ok: false,
+        error: {
+          code: "record-not-found",
+          message: 'Record "missing" was not found.',
+        },
+      });
     });
   });
 });
