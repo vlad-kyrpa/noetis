@@ -6,7 +6,7 @@ import { useCoreContext } from "@common/contexts/CoreContext";
 import { combineStyles } from "@common/utils/combineClasses";
 import { useDebounce } from "@common/hooks/useDebounce";
 import { NotesSearchResults } from "./NotesSearchResults";
-import { parseSearchQuery } from "./search-query";
+import { parseSearchQuery } from "../../utils/search-query";
 import type { NotesSearchResult } from "./types";
 import styles from "./styles.module.css";
 

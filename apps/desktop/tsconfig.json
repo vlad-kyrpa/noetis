@@ -1,11 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "paths": {
-      "@common/*": ["src/modules/common/*"]
+      "@common/*": ["./src/modules/common/*"]
     },
     "types": ["vite/client"]
   },

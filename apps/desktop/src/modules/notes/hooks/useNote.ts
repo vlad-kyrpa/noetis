@@ -6,7 +6,7 @@ import type {
   StoredRecord,
 } from "@noetis/noetis";
 import { useCoreContext } from "@common/contexts/CoreContext";
-import { useToast } from "@common/contexts/ToastContext";
+import { useToast } from "@common/contexts/ToastContext/ToastContext";
 
 export type NoteDraft = {
   title: string;

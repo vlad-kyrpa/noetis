@@ -5,7 +5,7 @@ import {
   useParams,
 } from "react-router-dom";
 import { CoreProvider } from "@common/contexts/CoreContext";
-import { ToastProvider } from "@common/contexts/ToastContext";
+import { ToastProvider } from "@common/contexts/ToastContext/ToastContext";
 import { NotesLayout } from "./modules/notes/components/NotesLayout/NotesLayout";
 import { NotePage } from "./modules/notes/components/NotePage/NotePage";
 

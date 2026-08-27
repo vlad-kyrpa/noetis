@@ -42,7 +42,8 @@ function hasValidTagPosition(tagIndexes: number[], tokensCount: number): boolean
     return true;
   }
 
-  const tagsAreContiguous = lastTagIndex - firstTagIndex + 1 === tagIndexes.length;
+  const tagsAreContiguous =
+    lastTagIndex - firstTagIndex + 1 === tagIndexes.length;
   const tagsAreAtStart = firstTagIndex === 0;
   const tagsAreAtEnd = lastTagIndex === tokensCount - 1;
 
