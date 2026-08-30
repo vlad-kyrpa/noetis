@@ -81,6 +81,15 @@ function findStoredQueryContainer(params: {
   );
 }
 
+// Creates the default stored-query container with a storage-owned id.
+function createDefaultStoredQueryContainer(): StoredQueryContainer {
+  return {
+    id: uuid(),
+    name: DEFAULT_STORED_QUERY_CONTAINER_NAME,
+    queries: [],
+  };
+}
+
 type FileStorageParams = {
   fileSystem: FileSystemAdapter;
   logger: Logger;
@@ -107,23 +116,11 @@ export class FileStorage implements CoreStorage {
       ) as StoredQueryContainer[];
 
       return containers.length === 0
-        ? [
-            {
-              id: uuid(),
-              name: DEFAULT_STORED_QUERY_CONTAINER_NAME,
-              queries: [],
-            },
-          ]
+        ? [createDefaultStoredQueryContainer()]
         : containers;
     }
 
-    return [
-      {
-        id: uuid(),
-        name: DEFAULT_STORED_QUERY_CONTAINER_NAME,
-        queries: [],
-      },
-    ];
+    return [createDefaultStoredQueryContainer()];
   }
 
   // Writes all stored query containers to the single JSON file.
@@ -137,6 +134,28 @@ export class FileStorage implements CoreStorage {
     );
   }
 
+  // Reads stored query containers and persists the default container when absent.
+  async getStoredQueries(): Promise<
+    Result<StoredQueryContainer[], CoreError>
+  > {
+    const containers = await this.getStoredQueryContainers();
+    const path = await this.getStoredQueryIndexPath();
+
+    if (!(await this.fileSystem.isExists(path))) {
+      await this.writeStoredQueryContainers(containers);
+    }
+
+    if (containers.length === 1 && containers[0]?.queries.length === 0) {
+      const content = await this.fileSystem.getFileContent(path);
+
+      if (content.trim() === "[]") {
+        await this.writeStoredQueryContainers(containers);
+      }
+    }
+
+    return { ok: true, value: containers };
+  }
+
   // Creates a query item inside an existing or default stored-query container.
   async createStoredQuery(
     payload: CreateStoredQueryPayload,
@@ -144,7 +163,9 @@ export class FileStorage implements CoreStorage {
     const containers = await this.getStoredQueryContainers();
     const container = findStoredQueryContainer({
       containers,
-      containerId: payload.containerId,
+      ...(payload.containerId === undefined
+        ? {}
+        : { containerId: payload.containerId }),
     });
 
     if (container === undefined) {

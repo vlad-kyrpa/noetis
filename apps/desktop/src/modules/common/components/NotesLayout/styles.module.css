@@ -10,7 +10,7 @@
   position: absolute;
   top: var(--space-10);
   left: var(--space-10);
-  z-index: 10;
+  z-index: 40;
   display: flex;
   gap: var(--space-5);
 }

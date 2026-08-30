@@ -4,10 +4,11 @@ import {
   RouterProvider,
   useParams,
 } from "react-router-dom";
+import { NotesLayout } from "@common/components";
 import { CoreProvider } from "@common/contexts/CoreContext";
 import { ToastProvider } from "@common/contexts/ToastContext/ToastContext";
-import { NotesLayout } from "./modules/notes/components/NotesLayout/NotesLayout";
 import { NotePage } from "./modules/notes/components/NotePage/NotePage";
+import { StoredQueryPage } from "./modules/queries/components/StoredQueryPage/StoredQueryPage";
 
 function AppProviders(): JSX.Element {
   return (
@@ -28,6 +29,13 @@ function NoteRoute(): JSX.Element {
   const { noteId } = useParams();
 
   return <NotePage noteId={noteId} />;
+}
+
+// Adapts router params into the stored-query page boundary.
+function StoredQueryRoute(): JSX.Element {
+  const { storedQueryId } = useParams();
+
+  return <StoredQueryPage storedQueryId={storedQueryId} />;
 }
 
 const router = createBrowserRouter([
@@ -51,6 +59,10 @@ const router = createBrowserRouter([
               {
                 path: "/notes/:noteId",
                 element: <NoteRoute />,
+              },
+              {
+                path: "/queries/:storedQueryId",
+                element: <StoredQueryRoute />,
               },
             ],
           },

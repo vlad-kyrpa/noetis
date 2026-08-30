@@ -346,6 +346,87 @@ describe("FileStorage", () => {
     });
   });
 
+  describe("getStoredQueries", () => {
+    it("reads stored query containers from the single JSON file", async () => {
+      const { storage } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([
+          {
+            id: "container-1",
+            name: "Stored Queries",
+            queries: [
+              {
+                id: "query-1",
+                name: "Daily",
+                query: { tags: ["daily"] },
+              },
+            ],
+          },
+        ]),
+      });
+
+      const result = await storage.getStoredQueries();
+
+      expect(result).toEqual({
+        ok: true,
+        value: [
+          {
+            id: "container-1",
+            name: "Stored Queries",
+            queries: [
+              {
+                id: "query-1",
+                name: "Daily",
+                query: { tags: ["daily"] },
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it("creates the default container when the file is missing", async () => {
+      const { storage, fileSystem } = createStorage();
+
+      const result = await storage.getStoredQueries();
+
+      expect(result).toEqual({
+        ok: true,
+        value: [
+          {
+            id: expect.any(String),
+            name: "Stored Queries",
+            queries: [],
+          },
+        ],
+      });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual(
+        result.ok ? result.value : undefined,
+      );
+    });
+
+    it("replaces an empty container file with the default container", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/stored-queries.json`]: JSON.stringify([]),
+      });
+
+      const result = await storage.getStoredQueries();
+
+      expect(result).toEqual({
+        ok: true,
+        value: [
+          {
+            id: expect.any(String),
+            name: "Stored Queries",
+            queries: [],
+          },
+        ],
+      });
+      expect(await readStoredQueryContainers(fileSystem)).toEqual(
+        result.ok ? result.value : undefined,
+      );
+    });
+  });
+
   describe("createStoredQuery", () => {
     it("creates the default container when the file is missing", async () => {
       const { storage, fileSystem } = createStorage();

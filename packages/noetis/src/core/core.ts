@@ -8,6 +8,7 @@ import type {
   Result,
   StoredRecord,
   StoredRecordHeader,
+  StoredQueryContainer,
 } from "./types";
 import { CommandId } from "./types";
 
@@ -73,6 +74,13 @@ export class CoreEngine {
   // Routes direct record reads through the storage query boundary.
   async get(ids: NoteId[]): Promise<Result<StoredRecord[], CoreError>> {
     return this.storage.getRecords(ids);
+  }
+
+  // Routes stored query reads through the storage query boundary.
+  async getStoredQueries(): Promise<
+    Result<StoredQueryContainer[], CoreError>
+  > {
+    return this.storage.getStoredQueries();
   }
 
   // Registers a callback that will be called after a successful command.

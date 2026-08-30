@@ -69,6 +69,7 @@ export interface CoreStorage {
   findRecords: (
     query: Query,
   ) => Promise<Result<StoredRecordHeader[], CoreError>>;
+  getStoredQueries: () => Promise<Result<StoredQueryContainer[], CoreError>>;
   createStoredQuery: (
     payload: CreateStoredQueryPayload,
   ) => Promise<Result<StoredQueryItem, CoreError>>;

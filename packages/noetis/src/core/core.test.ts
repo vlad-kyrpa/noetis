@@ -325,6 +325,29 @@ describe("CoreEngine", () => {
     });
   });
 
+  describe("getStoredQueries", () => {
+    it("routes stored query tree reads through storage", async () => {
+      const getStoredQueries: CoreStorage["getStoredQueries"] = vi.fn(
+        async (): Promise<Result<StoredQueryContainer[], CoreError>> => ({
+          ok: true,
+          value: [MOCK_STORED_QUERY_CONTAINER],
+        }),
+      );
+      const engine: CoreEngine = new CoreEngine({
+        storage: createMockCoreStorage({ getStoredQueries }),
+      });
+
+      const result: Result<StoredQueryContainer[], CoreError> =
+        await engine.getStoredQueries();
+
+      expect(result).toEqual({
+        ok: true,
+        value: [MOCK_STORED_QUERY_CONTAINER],
+      });
+      expect(getStoredQueries).toHaveBeenCalledWith();
+    });
+  });
+
   describe("addStateUpdateCallback", () => {
     it("registers callbacks for successful command notifications", async () => {
       const callback: () => void = vi.fn((): void => undefined);

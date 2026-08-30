@@ -213,6 +213,12 @@ export function createMockCoreStorage(
       ok: true,
       value: [MOCK_STORED_RECORD_HEADER],
     }),
+    getStoredQueries: async (): Promise<
+      Result<StoredQueryContainer[], CoreError>
+    > => ({
+      ok: true,
+      value: [MOCK_STORED_QUERY_CONTAINER],
+    }),
     createStoredQuery: async (): Promise<
       Result<StoredQueryItem, CoreError>
     > => ({
