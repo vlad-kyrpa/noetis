@@ -1,3 +1,4 @@
+import { Slot } from "radix-ui";
 import type { ReactNode } from "react";
 import { combineStyles } from "../../utils/combineClasses";
 import styles from "./styles.module.css";
@@ -16,6 +17,7 @@ interface ButtonProps {
   className?: string;
   type?: ButtonType;
   ariaLabel?: string;
+  asChild?: boolean;
 }
 
 const STYLES_CLASSES: Record<ButtonType, string> = {
@@ -34,12 +36,25 @@ export function Button({
   className,
   type = ButtonType.Regular,
   ariaLabel,
-}: ButtonProps) {
+  asChild = false,
+}: ButtonProps): JSX.Element {
   const combinedStyles = combineStyles(
     BASE_STYLE_CLASSES,
     STYLES_CLASSES[type],
     className,
   );
+
+  if (asChild) {
+    return (
+      <Slot.Root
+        aria-label={ariaLabel}
+        className={combinedStyles}
+        onClick={onClick}
+      >
+        {children ?? text}
+      </Slot.Root>
+    );
+  }
 
   return (
     <button

@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { Toast } from "radix-ui";
-import styles from "./toast.module.css";
+import styles from "./styles.module.css";
 
 export type ToastType = "success" | "error" | "info";
 

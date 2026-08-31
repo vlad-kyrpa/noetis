@@ -8,6 +8,7 @@ export { IconButton } from "./IconButton/IconButton";
 export { List, ListItem } from "./List/List";
 export { Modal } from "./Modal/Modal";
 export type { ModalSize } from "./Modal/Modal";
+export { NotesLayout } from "./NotesLayout/NotesLayout";
 export { Row, RowAlign, RowGap, RowJustify } from "./Row/Row";
 export type { RowProps } from "./Row/Row";
 export { SearchBox } from "./SearchBox/SearchBox";

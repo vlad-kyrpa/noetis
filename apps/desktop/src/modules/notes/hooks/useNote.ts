@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { CommandId } from "@noetis/noetis";
 import type {
   CoreEngine,
   CoreError,
@@ -6,7 +7,8 @@ import type {
   StoredRecord,
 } from "@noetis/noetis";
 import { useCoreContext } from "@common/contexts/CoreContext";
-import { useToast } from "@common/contexts/ToastContext";
+import { useToast } from "@common/contexts/ToastContext/ToastContext";
+import { createTags } from "@common/utils/tags";
 
 export type NoteDraft = {
   title: string;
@@ -57,14 +59,6 @@ const EMPTY_NOTE: NoteDraft = {
 const SAVE_SUCCESS_TEXT = "Note saved.";
 const DELETE_SUCCESS_TEXT = "Note deleted.";
 const DRAFT_CLEAR_TEXT = "Draft cleared.";
-
-// Converts comma-separated editor text into normalized tag labels.
-function createTags(value: string): string[] {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter((tag) => tag.length > 0);
-}
 
 // Converts a persisted record into editor field values.
 function createNoteDraft(record: StoredRecord): NoteDraft {
@@ -168,7 +162,7 @@ export function useNote({
   // Creates a new note and reports the created id to the route owner.
   const createNote = useCallback(async (): Promise<void> => {
     const result = await core.run({
-      id: "create-note",
+      id: CommandId.CreateNote,
       payload: {
         title: note.title,
         content: note.body,
@@ -194,7 +188,7 @@ export function useNote({
     }
 
     const result = await core.run({
-      id: "update-note",
+      id: CommandId.UpdateNote,
       payload: {
         id: noteId,
         title: note.title,
@@ -241,7 +235,7 @@ export function useNote({
     setError(null);
 
     const result = await core.run({
-      id: "remove-note",
+      id: CommandId.RemoveNote,
       payload: { id: noteId },
     });
 

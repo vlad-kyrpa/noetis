@@ -8,7 +8,9 @@ import type {
   Result,
   StoredRecord,
   StoredRecordHeader,
+  StoredQueryContainer,
 } from "./types";
+import { CommandId } from "./types";
 
 export type StateChangeCallback = () => void;
 
@@ -35,9 +37,18 @@ export class CoreEngine {
     this.storage = config.storage;
     this.updateSubscribers = [];
     this.commandHandlers = {
-      "create-note": this.createNote,
-      "update-note": this.updateNote,
-      "remove-note": this.removeNote,
+      [CommandId.CreateNote]: this.createNote,
+      [CommandId.UpdateNote]: this.updateNote,
+      [CommandId.RemoveNote]: this.removeNote,
+      [CommandId.CreateStoredQuery]: this.createStoredQuery,
+      [CommandId.CreateStoredQueryContainer]:
+        this.createStoredQueryContainer,
+      [CommandId.UpdateStoredQueryContainer]:
+        this.updateStoredQueryContainer,
+      [CommandId.RemoveStoredQueryContainer]:
+        this.removeStoredQueryContainer,
+      [CommandId.UpdateStoredQuery]: this.updateStoredQuery,
+      [CommandId.RemoveStoredQuery]: this.removeStoredQuery,
     };
   }
 
@@ -65,6 +76,13 @@ export class CoreEngine {
     return this.storage.getRecords(ids);
   }
 
+  // Routes stored query reads through the storage query boundary.
+  async getStoredQueries(): Promise<
+    Result<StoredQueryContainer[], CoreError>
+  > {
+    return this.storage.getStoredQueries();
+  }
+
   // Registers a callback that will be called after a successful command.
   addStateUpdateCallback(callback: StateChangeCallback): void {
     this.updateSubscribers = [...this.updateSubscribers, callback];
@@ -84,14 +102,14 @@ export class CoreEngine {
 
   // Creates a note through storage so persistence stays outside the core engine.
   private createNote = async (
-    command: Extract<Command, { id: "create-note" }>,
-  ): Promise<CommandResult<"create-note">> =>
+    command: Extract<Command, { id: CommandId.CreateNote }>,
+  ): Promise<CommandResult<CommandId.CreateNote>> =>
     this.storage.addRecord(command.payload);
 
   // Updates a note through storage using a named parameter object.
   private updateNote = async (
-    command: Extract<Command, { id: "update-note" }>,
-  ): Promise<CommandResult<"update-note">> =>
+    command: Extract<Command, { id: CommandId.UpdateNote }>,
+  ): Promise<CommandResult<CommandId.UpdateNote>> =>
     this.storage.updateRecord({
       id: command.payload.id,
       payload: command.payload,
@@ -99,7 +117,43 @@ export class CoreEngine {
 
   // Removes a note through storage and keeps the command boundary uniform.
   private removeNote = async (
-    command: Extract<Command, { id: "remove-note" }>,
-  ): Promise<CommandResult<"remove-note">> =>
+    command: Extract<Command, { id: CommandId.RemoveNote }>,
+  ): Promise<CommandResult<CommandId.RemoveNote>> =>
     this.storage.removeRecord(command.payload.id);
+
+  // Creates a stored query item through storage.
+  private createStoredQuery = async (
+    command: Extract<Command, { id: CommandId.CreateStoredQuery }>,
+  ): Promise<CommandResult<CommandId.CreateStoredQuery>> =>
+    this.storage.createStoredQuery(command.payload);
+
+  // Creates a stored query container through storage.
+  private createStoredQueryContainer = async (
+    command: Extract<Command, { id: CommandId.CreateStoredQueryContainer }>,
+  ): Promise<CommandResult<CommandId.CreateStoredQueryContainer>> =>
+    this.storage.createStoredQueryContainer(command.payload);
+
+  // Updates a stored query container through storage.
+  private updateStoredQueryContainer = async (
+    command: Extract<Command, { id: CommandId.UpdateStoredQueryContainer }>,
+  ): Promise<CommandResult<CommandId.UpdateStoredQueryContainer>> =>
+    this.storage.updateStoredQueryContainer(command.payload);
+
+  // Removes a stored query container through storage.
+  private removeStoredQueryContainer = async (
+    command: Extract<Command, { id: CommandId.RemoveStoredQueryContainer }>,
+  ): Promise<CommandResult<CommandId.RemoveStoredQueryContainer>> =>
+    this.storage.removeStoredQueryContainer(command.payload);
+
+  // Updates a stored query item through storage.
+  private updateStoredQuery = async (
+    command: Extract<Command, { id: CommandId.UpdateStoredQuery }>,
+  ): Promise<CommandResult<CommandId.UpdateStoredQuery>> =>
+    this.storage.updateStoredQuery(command.payload);
+
+  // Removes a stored query item through storage.
+  private removeStoredQuery = async (
+    command: Extract<Command, { id: CommandId.RemoveStoredQuery }>,
+  ): Promise<CommandResult<CommandId.RemoveStoredQuery>> =>
+    this.storage.removeStoredQuery(command.payload);
 }
