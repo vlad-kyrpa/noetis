@@ -83,6 +83,33 @@ async function readStoredQueryContainers(
 
 describe("FileStorage", () => {
   describe("addRecord", () => {
+    it("keeps existing file records in the generated index before adding", async () => {
+      const { storage, fileSystem } = createStorage({
+        [`${ROOT_PATH}/records/note-1.md`]: createStoredRecordContent({
+          title: "Existing",
+          content: "Body",
+          tags: ["archive"],
+          createdAt: CREATED_AT,
+        }),
+      });
+
+      const result = await storage.addRecord(
+        createNotePayload({
+          title: "New",
+          tags: ["daily"],
+        }),
+      );
+
+      if (!result.ok) {
+        throw new Error("Expected addRecord to succeed.");
+      }
+
+      expect(await readIndex(fileSystem)).toEqual([
+        { id: "note-1", title: "Existing", tags: ["archive"] },
+        { id: result.value.id, title: "New", tags: ["daily"] },
+      ]);
+    });
+
     it("writes a markdown record and adds it to the index", async () => {
       const { storage, fileSystem, logger } = createStorage();
 

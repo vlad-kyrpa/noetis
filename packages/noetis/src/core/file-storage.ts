@@ -365,6 +365,7 @@ export class FileStorage implements CoreStorage {
       await this.fileSystem.getDirectoryName(path),
     );
     await this.fileSystem.writeFileContent(path, serialized.value.content);
+    await this.ensureRecordIndexExists();
     await this.saveRecordToIndex(record);
     this.logger.info({
       message: "FileStorage.addRecord succeeded.",
@@ -423,6 +424,7 @@ export class FileStorage implements CoreStorage {
       await this.fileSystem.getDirectoryName(path),
     );
     await this.fileSystem.writeFileContent(path, serialized.value.content);
+    await this.ensureRecordIndexExists();
     await this.saveRecordToIndex(record);
     this.logger.info({
       message: "FileStorage.updateRecord succeeded.",
@@ -462,6 +464,7 @@ export class FileStorage implements CoreStorage {
     }
 
     await this.fileSystem.removeFile(path);
+    await this.ensureRecordIndexExists();
     await this.removeRecordFromIndex(id);
     this.logger.info({
       message: "FileStorage.removeRecord succeeded.",
@@ -562,6 +565,51 @@ export class FileStorage implements CoreStorage {
     return { ok: true, value: headers };
   }
 
+  // Rebuilds the lightweight index from the markdown files currently on disk.
+  async generateRecordIndexFromExistingFiles(): Promise<void> {
+    const recordsDirectoryPath = await this.getRecordsDirectoryPath();
+
+    if (!(await this.fileSystem.isExists(recordsDirectoryPath))) {
+      await this.writeRecordIndex([]);
+      return;
+    }
+
+    const recordPaths =
+      await this.fileSystem.getDirectoryContent(recordsDirectoryPath);
+    const pathEntries = await Promise.all(
+      recordPaths.map(async (recordPath) => ({
+        path: recordPath,
+        isRecordFile:
+          (await this.fileSystem.isFile(recordPath)) &&
+          recordPath.endsWith(MARKDOWN_EXTENSION),
+      })),
+    );
+    const recordFilePaths = pathEntries
+      .filter((entry) => entry.isRecordFile)
+      .map((entry) => entry.path);
+
+    const recordResults = await Promise.all(
+      recordFilePaths.map((recordPath) =>
+        this.readStoredRecordFromPath({
+          id: getRecordIdFromRecordPath({
+            path: recordPath,
+            extension: MARKDOWN_EXTENSION,
+          }),
+          path: recordPath,
+        }),
+      ),
+    );
+    const indexItems = recordResults
+      .filter(
+        (
+          result: Result<StoredRecord, CoreError>,
+        ): result is { ok: true; value: StoredRecord } => result.ok,
+      )
+      .map((result) => createRecordIndexItem(result.value));
+
+    await this.writeRecordIndex(indexItems);
+  }
+
   // Reads one stored markdown file and maps its sections back to a record.
   private async readStoredRecord(
     id: string,
@@ -623,51 +671,21 @@ export class FileStorage implements CoreStorage {
 
   // Builds the index from existing records when the index file is missing.
   private async readRecordIndexOrCreate(): Promise<StoredRecordIndexItem[]> {
+    await this.ensureRecordIndexExists();
+
+    return this.readRecordIndex();
+  }
+
+  // Generates the record index when storage cannot find an existing index file.
+  private async ensureRecordIndexExists(): Promise<void> {
     const path = await this.getRecordIndexPath();
-
-    if (
+    const indexExists =
       (await this.fileSystem.isExists(path)) &&
-      (await this.fileSystem.isFile(path))
-    ) {
-      return this.readRecordIndex();
+      (await this.fileSystem.isFile(path));
+
+    if (!indexExists) {
+      await this.generateRecordIndexFromExistingFiles();
     }
-
-    const recordPaths = await this.fileSystem.getDirectoryContent(
-      await this.getRecordsDirectoryPath(),
-    );
-    const recordFilePaths: string[] = [];
-
-    for (const recordPath of recordPaths) {
-      if (
-        (await this.fileSystem.isFile(recordPath)) &&
-        recordPath.endsWith(MARKDOWN_EXTENSION)
-      ) {
-        recordFilePaths.push(recordPath);
-      }
-    }
-
-    const recordResults = await Promise.all(
-      recordFilePaths.map((recordPath) =>
-        this.readStoredRecordFromPath({
-          id: getRecordIdFromRecordPath({
-            path: recordPath,
-            extension: MARKDOWN_EXTENSION,
-          }),
-          path: recordPath,
-        }),
-      ),
-    );
-    const indexItems = recordResults
-      .filter(
-        (
-          result: Result<StoredRecord, CoreError>,
-        ): result is { ok: true; value: StoredRecord } => result.ok,
-      )
-      .map((result) => createRecordIndexItem(result.value));
-
-    await this.writeRecordIndex(indexItems);
-
-    return indexItems;
   }
 
   // Writes the lightweight record search index to storage.
