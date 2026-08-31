@@ -1,6 +1,7 @@
 export { CoreEngine } from "./core/core";
 export { FileStorage } from "./core/file-storage";
 export { ConsoleLogger } from "./core/console-logger";
+export { CommandId } from "./core/types";
 export type { CoreEngineConfig, StateChangeCallback } from "./core/core";
 export type { Logger } from "./core/logger";
 export type {
@@ -13,15 +14,33 @@ export type {
   CoreStorage,
   CreateNoteCommand,
   CreateNotePayload,
+  CreateStoredQueryCommand,
+  CreateStoredQueryContainerCommand,
+  CreateStoredQueryContainerPayload,
+  CreateStoredQueryPayload,
   FileSystemAdapter,
   NoteId,
   Query,
   RemoveNoteCommand,
   RemoveNotePayload,
+  RemoveStoredQueryContainerCommand,
+  RemoveStoredQueryContainerPayload,
+  RemoveStoredQueryCommand,
+  RemoveStoredQueryPayload,
   Result,
   StoredRecord,
   StoredRecordHeader,
+  StoredQuery,
+  StoredQueryContainer,
+  StoredQueryContainerPayload,
+  StoredQueryId,
+  StoredQueryItem,
+  StoredQueryPayload,
   UpdateNoteCommand,
   UpdateNotePayload,
+  UpdateStoredQueryContainerCommand,
+  UpdateStoredQueryContainerPayload,
+  UpdateStoredQueryCommand,
+  UpdateStoredQueryPayload,
   UpdateStoredRecordParams,
 } from "./core/types";

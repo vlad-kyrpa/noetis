@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CommandId } from "./types";
 import type {
   Command,
   CoreError,
@@ -13,7 +14,7 @@ const NOTE_ID: NoteId = "note-1" as NoteId;
 describe("core types", () => {
   it("accepts update commands with a branded note id and updated timestamp", () => {
     const command: Command = {
-      id: "update-note",
+      id: CommandId.UpdateNote,
       payload: {
         id: NOTE_ID,
         title: "Title",
