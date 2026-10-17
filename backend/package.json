@@ -1,0 +1,27 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "types": "wrangler types --env-interface CloudflareBindings",
+    "build:client": "npm --prefix ../client run build",
+    "deploy": "npm run build:client && wrangler deploy"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.69.0",
+    "wrangler": "^4.147.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.13"
+  }
+}
