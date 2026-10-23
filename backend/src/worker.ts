@@ -5,6 +5,7 @@ import { registerExpensesRoutes } from './modules/expenses/controller';
 import { registerNotesRoutes } from './modules/notes/controller';
 import { registerTagRoutes } from './modules/tags/controller';
 import { registerTaskRoutes } from './modules/tasks/controller';
+import { registerViewRoutes } from './modules/views/controller';
 
 /** Hosts the HTTP API in Cloudflare's serverless runtime. */
 const app = new Hono<{ Bindings: ApiBindings }>();
@@ -15,5 +16,6 @@ registerTagRoutes(dependencies);
 registerNotesRoutes(dependencies);
 registerTaskRoutes(dependencies);
 registerExpensesRoutes(dependencies);
+registerViewRoutes(dependencies);
 
 export default app;

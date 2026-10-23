@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, isNotNull, like, sql } from 'drizzle-orm';
 import { notes, taskLinks, taskNotes, tasks } from '../../../database/schema';
 import type { Database } from '../../Database';
 import { collectionDiff } from '../../common/utils/collections';
+import { failure, success } from '../../common/utils/result';
 import type { Task, TaskFilters, TaskInput, TasksService } from '../types';
 
 /** Synchronizes each task relation table using only the requested identifier changes. */
@@ -104,9 +105,11 @@ export const taskServiceFactory = (database: Database): TasksService => ({
       .where(eq(tasks.id, id))
       .returning();
     const task = updated[0];
-    if (task === undefined) return null;
+    if (task === undefined) {
+      return failure('Task not found');
+    }
     await replaceRelations({ database, taskId: id, input });
-    return hydrateTask({ database, task });
+    return success(await hydrateTask({ database, task }));
   },
   remove: async (ids) => {
     await database.delete(tasks).where(inArray(tasks.id, ids));
@@ -138,26 +141,28 @@ export const taskServiceFactory = (database: Database): TasksService => ({
     return Promise.all(rows.map((task) => hydrateTask({ database, task })));
   },
   findNoteByTitleAndLink: async ({ taskId, title }) => {
-    const note = await database
-      .select({ id: notes.id })
-      .from(notes)
-      .where(eq(notes.title, title))
-      .get();
-    if (note === undefined) return null;
+    const [source, note] = await Promise.all([
+      database.select({ id: tasks.id }).from(tasks).where(eq(tasks.id, taskId)).get(),
+      database.select({ id: notes.id }).from(notes).where(eq(notes.title, title)).get(),
+    ]);
+    if (source === undefined || note === undefined) {
+      return failure('Task or note not found');
+    }
     await database.insert(taskNotes).values({ taskId, noteId: note.id }).onConflictDoNothing();
-    return note.id;
+    return success(note.id);
   },
   findTaskByTitleAndLink: async ({ taskId, title }) => {
-    const task = await database
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(eq(tasks.title, title))
-      .get();
-    if (task === undefined || task.id === taskId) return null;
+    const [source, task] = await Promise.all([
+      database.select({ id: tasks.id }).from(tasks).where(eq(tasks.id, taskId)).get(),
+      database.select({ id: tasks.id }).from(tasks).where(eq(tasks.title, title)).get(),
+    ]);
+    if (source === undefined || task === undefined || task.id === taskId) {
+      return failure('Task not found or self-link requested');
+    }
     await database
       .insert(taskLinks)
       .values({ taskId, linkedTaskId: task.id })
       .onConflictDoNothing();
-    return task.id;
+    return success(task.id);
   },
 });

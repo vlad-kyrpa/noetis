@@ -8,11 +8,9 @@ import { type LinkTaskRequestContext } from './link-note-by-title';
 export const linkTaskByTitleHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: LinkTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const taskId = await taskServiceFactory(database).findTaskByTitleAndLink({
+    const result = await taskServiceFactory(database).findTaskByTitleAndLink({
       taskId: context.validatedReq.params.id,
       title: context.validatedReq.body.title,
     });
-    return taskId === null
-      ? context.json(failure('Task not found or self-link requested'), 404)
-      : context.json(success({ taskId }));
+    return result.ok ? context.json(success({ taskId: result.value })) : context.json(result, 404);
   });

@@ -37,16 +37,17 @@ export interface TaskFilters {
 /** Defines the storage-agnostic behavior exposed by the Tasks module. */
 export interface TasksService {
   create(input: TaskInput): Promise<Task>;
-  update(params: { readonly id: string; readonly input: TaskInput }): Promise<Task | null>;
+  update(params: { readonly id: string; readonly input: TaskInput }): Promise<Result<Task>>;
   remove(ids: readonly string[]): Promise<void>;
   get(ids: readonly string[]): Promise<readonly Task[]>;
   find(filters: TaskFilters): Promise<readonly Task[]>;
   findNoteByTitleAndLink(params: {
     readonly taskId: string;
     readonly title: string;
-  }): Promise<string | null>;
+  }): Promise<Result<string>>;
   findTaskByTitleAndLink(params: {
     readonly taskId: string;
     readonly title: string;
-  }): Promise<string | null>;
+  }): Promise<Result<string>>;
 }
+import type { Result } from '../common/utils/result';

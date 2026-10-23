@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, like, sql } from 'drizzle-orm';
 import { noteLinks, noteTags, noteTasks, notes, tags } from '../../../database/schema';
 import type { Database } from '../../Database';
 import { collectionDiff } from '../../common/utils/collections';
+import { failure, success } from '../../common/utils/result';
 import { resolveTags } from '../../tags/services/resolve-tags';
 import type { Note, NoteFilters, NoteInput, NotesService } from '../types';
 
@@ -128,11 +129,11 @@ export const noteServiceFactory = (database: Database): NotesService => ({
 
     const note = updated[0];
     if (note === undefined) {
-      return null;
+      return failure('Note not found');
     }
 
     await replaceRelations({ database, noteId: id, input });
-    return hydrateNote({ database, note });
+    return success(await hydrateNote({ database, note }));
   },
 
   remove: async (ids) => {

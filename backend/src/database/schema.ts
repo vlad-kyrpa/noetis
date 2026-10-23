@@ -1,4 +1,11 @@
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import {
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
 
 /** Stores user-created labels shared by every feature. */
 export const tags = sqliteTable('tags', {
@@ -6,6 +13,32 @@ export const tags = sqliteTable('tags', {
   label: text('label').notNull().unique(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
+/** Stores saved views over one supported record type. */
+export const views = sqliteTable(
+  'views',
+  {
+    id: text('id').primaryKey(),
+    type: text('type', { enum: ['note', 'expense', 'task'] }).notNull(),
+    period: text('period', { enum: ['day', 'week', 'month', 'year'] }).notNull(),
+    title: text('title').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [uniqueIndex('views_type_title_unique').on(table.type, table.title)],
+);
+/** Associates saved views with their public tag labels through durable tag records. */
+export const viewTags = sqliteTable(
+  'view_tags',
+  {
+    viewId: text('view_id')
+      .notNull()
+      .references(() => views.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id')
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.viewId, table.tagId] })],
+);
 /** Stores durable note content. */
 export const notes = sqliteTable(
   'notes',
@@ -117,6 +150,8 @@ export const expenses = sqliteTable(
 /** Exposes the complete Drizzle schema to the D1 adapter. */
 export const schema = {
   tags,
+  views,
+  viewTags,
   notes,
   tasks,
   noteTags,

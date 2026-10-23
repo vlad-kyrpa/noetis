@@ -39,11 +39,9 @@ export const validateUpdateTask = validationMiddlewareFactory(updateTaskSchema);
 export const updateTaskHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: UpdateTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const task = await taskServiceFactory(database).update({
+    const result = await taskServiceFactory(database).update({
       id: context.validatedReq.params.id,
       input: context.validatedReq.body,
     });
-    return task === null
-      ? context.json(failure('Task not found'), 404)
-      : context.json(success(task));
+    return result.ok ? context.json(result) : context.json(result, 404);
   });

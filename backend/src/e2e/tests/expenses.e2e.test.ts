@@ -21,7 +21,9 @@ before(async (): Promise<void> => {
 
 /** Stops the shared Worker only after every module test has completed. */
 after(async (): Promise<void> => {
-  await getContext().close();
+  if (testState.context !== null) {
+    await testState.context.close();
+  }
 });
 
 /** Groups all list-endpoint behavior so successful and invalid requests remain easy to compare. */

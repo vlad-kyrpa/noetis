@@ -13,6 +13,8 @@ import {
   taskLinks,
   taskNotes,
   tasks,
+  viewTags,
+  views,
 } from '../database/schema';
 import type { Database } from '../modules/Database';
 import type { ApiBindings } from '../modules/api';
@@ -59,9 +61,15 @@ const resetApiDatabase = async (database: Database): Promise<void> => {
     database.delete(noteLinks),
     database.delete(taskLinks),
     database.delete(taskNotes),
+    database.delete(viewTags),
   ]);
   // Records may still reference tags, so remove them before deleting the shared labels.
-  await Promise.all([database.delete(expenses), database.delete(tasks), database.delete(notes)]);
+  await Promise.all([
+    database.delete(expenses),
+    database.delete(tasks),
+    database.delete(notes),
+    database.delete(views),
+  ]);
   await database.delete(tags);
 };
 
@@ -72,22 +80,25 @@ export const createApiTestContext = async (): Promise<ApiTestContext> => {
     root: backendRoot,
     workers: [{ configPath: './wrangler.e2e.jsonc' }],
   });
-  await harness.listen();
+  try {
+    await harness.listen();
+    // Apply production migrations rather than duplicating schema setup in the test harness.
+    const worker = harness.getWorker<ApiBindings>();
+    await worker.applyD1Migrations('DB');
+    const bindings = await worker.getEnv();
+    const database = drizzle(bindings.DB, { schema });
 
-  // Apply the production migration files before seeding, rather than duplicating the schema in tests.
-  const worker = harness.getWorker<ApiBindings>();
-  await worker.applyD1Migrations('DB');
-  // Obtain the exact D1 binding used by Worker requests so fixtures and API calls share one state.
-  const bindings = await worker.getEnv();
-
-  const database = drizzle(bindings.DB, { schema });
-
-  return {
-    database,
-    fetch: (path, init): Promise<ApiTestResponse> => harness.fetch(path, init),
-    // Reuse the expensive Worker process while restoring the database to its empty migrated state.
-    reset: (): Promise<void> => resetApiDatabase(database),
-    // Closing the harness disposes its temporary D1 storage after the test completes.
-    close: (): Promise<void> => harness.close(),
-  };
+    return {
+      database,
+      fetch: (path, init): Promise<ApiTestResponse> => harness.fetch(path, init),
+      // Reuse the expensive Worker process while restoring the database to its empty migrated state.
+      reset: (): Promise<void> => resetApiDatabase(database),
+      // Closing the harness disposes its temporary D1 storage after the test completes.
+      close: (): Promise<void> => harness.close(),
+    };
+  } catch (error: unknown) {
+    // A failed startup can still allocate Worker handles, so release them before propagating the cause.
+    await harness.close();
+    throw error;
+  }
 };

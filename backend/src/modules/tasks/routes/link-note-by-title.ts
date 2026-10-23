@@ -42,11 +42,9 @@ export const validateLinkTask = validationMiddlewareFactory(linkTaskSchema);
 export const linkNoteByTitleHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: LinkTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const noteId = await taskServiceFactory(database).findNoteByTitleAndLink({
+    const result = await taskServiceFactory(database).findNoteByTitleAndLink({
       taskId: context.validatedReq.params.id,
       title: context.validatedReq.body.title,
     });
-    return noteId === null
-      ? context.json(failure('Task or note not found'), 404)
-      : context.json(success({ noteId }));
+    return result.ok ? context.json(success({ noteId: result.value })) : context.json(result, 404);
   });

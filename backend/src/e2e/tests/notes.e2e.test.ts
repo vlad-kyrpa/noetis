@@ -21,7 +21,9 @@ before(async (): Promise<void> => {
 
 /** Stops the shared Worker only after every module test has completed. */
 after(async (): Promise<void> => {
-  await getContext().close();
+  if (testState.context !== null) {
+    await testState.context.close();
+  }
 });
 
 /** Groups note-list behavior by its public read endpoint. */

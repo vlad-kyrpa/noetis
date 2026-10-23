@@ -39,11 +39,9 @@ export const validateUpdateNote = validationMiddlewareFactory(updateNoteSchema);
 export const updateNoteHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: UpdateNoteRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const note = await noteServiceFactory(database).update({
+    const result = await noteServiceFactory(database).update({
       id: context.validatedReq.params.id,
       input: context.validatedReq.body,
     });
-    return note === null
-      ? context.json(failure('Note not found'), 404)
-      : context.json(success(note));
+    return result.ok ? context.json(result) : context.json(result, 404);
   });
