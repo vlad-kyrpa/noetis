@@ -1,11 +1,30 @@
 import { strict as assert } from 'node:assert';
-import test from 'node:test';
-import { createApiTestContext } from '../api-test-context';
+import { after, before, test } from 'node:test';
+import { createApiTestContext, type ApiTestContext } from '../api-test-context';
 import { createApiFixture, seedApiFixture } from '../fixtures';
+
+/** Holds the one expensive Worker/D1 harness shared by this module's sequential API cases. */
+const testState: { context: ApiTestContext | null } = { context: null };
+
+/** Returns the started module harness or fails clearly if test lifecycle hooks are misconfigured. */
+const getContext = (): ApiTestContext => {
+  if (testState.context === null) throw new Error('API test context was not started');
+  return testState.context;
+};
+
+/** Starts and migrates the Worker once before this module's tests run. */
+before(async (): Promise<void> => {
+  testState.context = await createApiTestContext();
+});
+
+/** Stops the shared Worker only after every module test has completed. */
+after(async (): Promise<void> => {
+  await getContext().close();
+});
 
 /** Verifies an API query reads records and relationships from a migrated local D1 database. */
 test('GET /api/notes filters seeded records and returns their relationships', async () => {
-  const context = await createApiTestContext();
+  const context = getContext();
 
   try {
     await seedApiFixture({ database: context.database, fixture: createApiFixture() });
@@ -26,13 +45,13 @@ test('GET /api/notes filters seeded records and returns their relationships', as
     assert.deepEqual(payload.value[0]?.tagIds, ['tag-work']);
     assert.deepEqual(payload.value[0]?.linkedTaskIds, ['task-ship']);
   } finally {
-    await context.close();
+    await context.reset();
   }
 });
 
 /** Verifies a public write route persists data into the temporary D1 database. */
 test('POST /api/tasks persists a task that can be read through the API', async () => {
-  const context = await createApiTestContext();
+  const context = getContext();
 
   try {
     await seedApiFixture({
@@ -71,6 +90,6 @@ test('POST /api/tasks persists a task that can be read through the API', async (
     assert.equal(listed.value[0]?.id, created.value.id);
     assert.equal(listed.value[0]?.title, 'Review release');
   } finally {
-    await context.close();
+    await context.reset();
   }
 });
