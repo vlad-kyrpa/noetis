@@ -1,16 +1,45 @@
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
-import { expenses } from '../../../database/schema';
+import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
+import { expenses, tags } from '../../../database/schema';
 import type { Database } from '../../Database';
-import type { ExpenseFilters, ExpenseInput, ExpensesService } from '../types';
+import { resolveTags } from '../../tags/services/resolve-tags';
+import type { ExpenseFilters, ExpenseInput, ExpenseRecord, ExpensesService } from '../types';
+
+/** Converts a stored expense's internal tag reference into the public tag-label contract. */
+const hydrateExpense = async (params: {
+  readonly database: Database;
+  readonly expense: typeof expenses.$inferSelect;
+}): Promise<ExpenseRecord> => {
+  const { database, expense } = params;
+  const tag =
+    expense.tagId === null
+      ? undefined
+      : await database
+          .select({ label: tags.label })
+          .from(tags)
+          .where(eq(tags.id, expense.tagId))
+          .get();
+  const { tagId, ...record } = expense;
+  return { ...record, tag: tag?.label ?? null };
+};
 
 /** Builds the documented Expenses service on top of the D1 database abstraction. */
 export const expenseServiceFactory = (database: Database): ExpensesService => ({
   create: async (input: ExpenseInput) => {
     const id = crypto.randomUUID();
     const now = new Date();
+    const tag =
+      input.tag === null ? undefined : (await resolveTags({ database, labels: [input.tag] }))[0];
+    const tagId = tag?.id ?? null;
     const rows = await database
       .insert(expenses)
-      .values({ id, ...input, createdAt: now, updatedAt: now })
+      .values({
+        id,
+        amount: input.amount,
+        description: input.description,
+        tagId,
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
 
     const record = rows[0];
@@ -18,16 +47,20 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
       throw new Error('Created expense was not found');
     }
 
-    return record;
+    return hydrateExpense({ database, expense: record });
   },
 
   update: async ({ id, input }) => {
+    const tag =
+      input.tag === null ? undefined : (await resolveTags({ database, labels: [input.tag] }))[0];
+    const tagId = tag?.id ?? null;
     const rows = await database
       .update(expenses)
-      .set({ ...input, updatedAt: new Date() })
+      .set({ amount: input.amount, description: input.description, tagId, updatedAt: new Date() })
       .where(eq(expenses.id, id))
       .returning();
-    return rows[0] ?? null;
+    const record = rows[0];
+    return record === undefined ? null : hydrateExpense({ database, expense: record });
   },
 
   remove: async (ids) => {
@@ -35,16 +68,29 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
   },
 
   find: async (filters: ExpenseFilters) => {
+    const tag =
+      filters.tag === undefined
+        ? undefined
+        : await database
+            .select({ id: tags.id })
+            .from(tags)
+            .where(eq(tags.label, filters.tag))
+            .get();
     const conditions = [
-      filters.tagId === undefined ? undefined : eq(expenses.tagId, filters.tagId),
+      filters.tag === undefined
+        ? undefined
+        : tag === undefined
+          ? sql`0`
+          : eq(expenses.tagId, tag.id),
       filters.from === undefined ? undefined : gte(expenses.createdAt, filters.from),
       filters.to === undefined ? undefined : lte(expenses.createdAt, filters.to),
     ].filter((condition) => condition !== undefined);
 
-    return database
+    const records = await database
       .select()
       .from(expenses)
       .where(conditions.length === 0 ? undefined : and(...conditions))
       .orderBy(desc(expenses.createdAt));
+    return Promise.all(records.map((expense) => hydrateExpense({ database, expense })));
   },
 });

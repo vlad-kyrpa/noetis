@@ -8,7 +8,9 @@ const testState: { context: ApiTestContext | null } = { context: null };
 
 /** Returns the started module harness or fails clearly if test lifecycle hooks are misconfigured. */
 const getContext = (): ApiTestContext => {
-  if (testState.context === null) throw new Error('Tags test context was not started');
+  if (testState.context === null) {
+    throw new Error('Tags test context was not started');
+  }
   return testState.context;
 };
 

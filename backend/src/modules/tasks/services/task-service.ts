@@ -75,18 +75,16 @@ export const taskServiceFactory = (database: Database): TasksService => ({
   create: async (input) => {
     const id = crypto.randomUUID();
     const now = new Date();
-    await database
-      .insert(tasks)
-      .values({
-        id,
-        title: input.title,
-        description: input.description,
-        tagId: input.tagId,
-        dueTo: input.dueTo,
-        status: input.status,
-        createdAt: now,
-        updatedAt: now,
-      });
+    await database.insert(tasks).values({
+      id,
+      title: input.title,
+      description: input.description,
+      tagId: input.tagId,
+      dueTo: input.dueTo,
+      status: input.status,
+      createdAt: now,
+      updatedAt: now,
+    });
     await replaceRelations({ database, taskId: id, input });
     const task = await database.select().from(tasks).where(eq(tasks.id, id)).get();
     if (task === undefined) throw new Error('Created task was not found');

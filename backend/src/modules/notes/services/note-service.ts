@@ -1,10 +1,11 @@
 import { and, desc, eq, inArray, like, sql } from 'drizzle-orm';
-import { noteLinks, noteTags, noteTasks, notes } from '../../../database/schema';
+import { noteLinks, noteTags, noteTasks, notes, tags } from '../../../database/schema';
 import type { Database } from '../../Database';
 import { collectionDiff } from '../../common/utils/collections';
+import { resolveTags } from '../../tags/services/resolve-tags';
 import type { Note, NoteFilters, NoteInput, NotesService } from '../types';
 
-/** Synchronizes each note relation table using only the changes from the requested IDs. */
+/** Synchronizes note relations after converting public tag labels to internal IDs. */
 const replaceRelations = async (params: {
   readonly database: Database;
   readonly noteId: string;
@@ -12,7 +13,8 @@ const replaceRelations = async (params: {
 }): Promise<void> => {
   const { database, noteId, input } = params;
 
-  const [storedTags, storedTasks, storedLinks] = await Promise.all([
+  const [resolvedTags, storedTags, storedTasks, storedLinks] = await Promise.all([
+    resolveTags({ database, labels: input.tags }),
     database.select({ id: noteTags.tagId }).from(noteTags).where(eq(noteTags.noteId, noteId)),
     database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, noteId)),
     database
@@ -23,7 +25,7 @@ const replaceRelations = async (params: {
 
   const tagChanges = collectionDiff({
     current: storedTags.map((tag) => tag.id),
-    desired: input.tagIds,
+    desired: resolvedTags.map((tag) => tag.id),
   });
   const taskChanges = collectionDiff({
     current: storedTasks.map((task) => task.id),
@@ -73,8 +75,12 @@ const hydrateNote = async (params: {
   readonly note: typeof notes.$inferSelect;
 }): Promise<Note> => {
   const { database, note } = params;
-  const [tags, linkedTasks, linkedNotes] = await Promise.all([
-    database.select({ id: noteTags.tagId }).from(noteTags).where(eq(noteTags.noteId, note.id)),
+  const [tagRecords, linkedTasks, linkedNotes] = await Promise.all([
+    database
+      .select({ label: tags.label })
+      .from(noteTags)
+      .innerJoin(tags, eq(noteTags.tagId, tags.id))
+      .where(eq(noteTags.noteId, note.id)),
     database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, note.id)),
     database
       .select({ id: noteLinks.linkedNoteId })
@@ -84,7 +90,7 @@ const hydrateNote = async (params: {
 
   return {
     ...note,
-    tagIds: tags.map((item) => item.id),
+    tags: tagRecords.map((item) => item.label),
     linkedTaskIds: linkedTasks.map((item) => item.id),
     linkedNoteIds: linkedNotes.map((item) => item.id),
   };
@@ -148,9 +154,14 @@ export const noteServiceFactory = (database: Database): NotesService => ({
       filters.body === undefined
         ? undefined
         : like(sql`lower(${notes.body})`, `%${filters.body.toLowerCase()}%`),
-      filters.tagId === undefined
+      filters.tag === undefined
         ? undefined
-        : sql`${notes.id} in (select note_id from note_tags where tag_id = ${filters.tagId})`,
+        : sql`${notes.id} in (
+            select ${noteTags.noteId}
+            from ${noteTags}
+            inner join ${tags} on ${noteTags.tagId} = ${tags.id}
+            where ${tags.label} = ${filters.tag}
+          )`,
     ].filter((condition) => condition !== undefined);
 
     const rows = await database

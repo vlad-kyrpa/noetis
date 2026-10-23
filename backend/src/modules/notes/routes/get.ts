@@ -24,7 +24,7 @@ export const getNotesSchema: EndpointValidationSchema<GetNotesBody, GetNotesPara
   query: z.object({
     title: z.string().optional(),
     body: z.string().optional(),
-    tagId: z.string().optional(),
+    tag: z.string().optional(),
   }),
 };
 

@@ -15,8 +15,8 @@ export const decodeExpenseInput: BodyDecoder<ExpenseInput> = (value) => {
           ? field
           : undefined;
   const description = optional(value.description);
-  const tagId = optional(value.tagId);
-  return description === undefined || tagId === undefined
+  const tag = optional(value.tag);
+  return description === undefined || tag === undefined
     ? null
-    : { amount: value.amount, description, tagId };
+    : { amount: value.amount, description, tag };
 };

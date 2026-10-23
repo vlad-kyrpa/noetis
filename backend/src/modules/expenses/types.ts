@@ -2,7 +2,7 @@
 export interface ExpenseRecord {
   readonly id: string;
   readonly amount: number;
-  readonly tagId: string | null;
+  readonly tag: string | null;
   readonly description: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -12,12 +12,12 @@ export interface ExpenseRecord {
 export interface ExpenseInput {
   readonly amount: number;
   readonly description: string | null;
-  readonly tagIds: string[];
+  readonly tag: string | null;
 }
 
 /** Defines the documented Expenses query filters. */
 export interface ExpenseFilters {
-  readonly tagId?: string;
+  readonly tag?: string;
   readonly from?: Date;
   readonly to?: Date;
 }

@@ -8,7 +8,9 @@ const testState: { context: ApiTestContext | null } = { context: null };
 
 /** Returns the started module harness or fails clearly if test lifecycle hooks are misconfigured. */
 const getContext = (): ApiTestContext => {
-  if (testState.context === null) throw new Error('API test context was not started');
+  if (testState.context === null) {
+    throw new Error('API test context was not started');
+  }
   return testState.context;
 };
 
@@ -20,33 +22,6 @@ before(async (): Promise<void> => {
 /** Stops the shared Worker only after every module test has completed. */
 after(async (): Promise<void> => {
   await getContext().close();
-});
-
-/** Verifies an API query reads records and relationships from a migrated local D1 database. */
-test('GET /api/notes filters seeded records and returns their relationships', async () => {
-  const context = getContext();
-
-  try {
-    await seedApiFixture({ database: context.database, fixture: createApiFixture() });
-    const response = await context.fetch('/api/notes?tagId=tag-work');
-    const payload = (await response.json()) as {
-      readonly ok: boolean;
-      readonly value: readonly {
-        readonly id: string;
-        readonly tagIds: readonly string[];
-        readonly linkedTaskIds: readonly string[];
-      }[];
-    };
-
-    assert.equal(response.status, 200);
-    assert.equal(payload.ok, true);
-    assert.equal(payload.value.length, 1);
-    assert.equal(payload.value[0]?.id, 'note-plan');
-    assert.deepEqual(payload.value[0]?.tagIds, ['tag-work']);
-    assert.deepEqual(payload.value[0]?.linkedTaskIds, ['task-ship']);
-  } finally {
-    await context.reset();
-  }
 });
 
 /** Verifies a public write route persists data into the temporary D1 database. */

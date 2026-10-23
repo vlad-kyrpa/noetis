@@ -5,7 +5,7 @@ export interface Note {
   readonly body: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
-  readonly tagIds: readonly string[];
+  readonly tags: readonly string[];
   readonly linkedTaskIds: readonly string[];
   readonly linkedNoteIds: readonly string[];
 }
@@ -14,7 +14,7 @@ export interface Note {
 export interface NoteInput {
   readonly title: string;
   readonly body: string;
-  readonly tagIds: readonly string[];
+  readonly tags: readonly string[];
   readonly linkedTaskIds: readonly string[];
   readonly linkedNoteIds: readonly string[];
 }
@@ -23,7 +23,7 @@ export interface NoteInput {
 export interface NoteFilters {
   readonly title?: string;
   readonly body?: string;
-  readonly tagId?: string;
+  readonly tag?: string;
 }
 
 /** Defines the storage-agnostic behavior exposed by the Notes module. */

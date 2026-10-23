@@ -17,7 +17,7 @@ export const expenseFilters = (context: Context): ExpenseFilters | null => {
   const invalid =
     (fromDate !== undefined && Number.isNaN(fromDate.getTime())) ||
     (toDate !== undefined && Number.isNaN(toDate.getTime()));
-  return invalid ? null : { tagId: context.req.query('tag'), from: fromDate, to: toDate };
+  return invalid ? null : { tag: context.req.query('tag'), from: fromDate, to: toDate };
 };
 /** Reads a validated body without globally coupling Hono context variables. */
 export const bodyOf = <T>(context: Context): T =>

@@ -31,11 +31,15 @@ export const getExpensesSchema: EndpointValidationSchema<
   params: z.object({}),
   query: z
     .object({
-      tagId: z.string().optional(),
+      tag: z.string().optional(),
       from: z.coerce.date().optional(),
       to: z.coerce.date().optional(),
     })
-    .transform(({ tagId, from, to }) => ({ tagId, from, to })),
+    .refine(
+      ({ from, to }) => from === undefined || to === undefined || from.getTime() <= to.getTime(),
+      { message: 'The start date must not be after the end date' },
+    )
+    .transform(({ tag, from, to }) => ({ tag, from, to })),
 };
 
 /** Validates every request part required by the Expense list endpoint. */

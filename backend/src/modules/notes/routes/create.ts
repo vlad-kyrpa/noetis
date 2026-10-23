@@ -21,7 +21,7 @@ export type CreateNoteRequestContext = RequestContext<NoteInput, CreateNoteParam
 export const noteInputSchema: z.ZodType<NoteInput> = z.object({
   title: z.string().min(1),
   body: z.string(),
-  tagIds: z.array(z.string().min(1)).default([]),
+  tags: z.array(z.string().trim().min(1)).default([]),
   linkedTaskIds: z.array(z.string().min(1)).default([]),
   linkedNoteIds: z.array(z.string().min(1)).default([]),
 });

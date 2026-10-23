@@ -8,7 +8,9 @@ const testState: { context: ApiTestContext | null } = { context: null };
 
 /** Returns the started module harness or fails clearly if test lifecycle hooks are misconfigured. */
 const getContext = (): ApiTestContext => {
-  if (testState.context === null) throw new Error('Expenses test context was not started');
+  if (testState.context === null) {
+    throw new Error('Expenses test context was not started');
+  }
   return testState.context;
 };
 
@@ -29,13 +31,13 @@ test('GET /api/expenses', async (suite) => {
 
     try {
       await seedApiFixture({ database: context.database, fixture: createApiFixture() });
-      const response = await context.fetch('/api/expenses?tagId=tag-work');
+      const response = await context.fetch('/api/expenses?tag=work');
       const payload = (await response.json()) as {
         readonly ok: boolean;
         readonly value: readonly {
           readonly id: string;
           readonly amount: number;
-          readonly tagId: string | null;
+          readonly tag: string | null;
           readonly description: string | null;
         }[];
       };
@@ -45,7 +47,7 @@ test('GET /api/expenses', async (suite) => {
       assert.equal(payload.value.length, 1);
       assert.equal(payload.value[0]?.id, 'expense-hosting');
       assert.equal(payload.value[0]?.amount, -2500);
-      assert.equal(payload.value[0]?.tagId, 'tag-work');
+      assert.equal(payload.value[0]?.tag, 'work');
       assert.equal(payload.value[0]?.description, 'Hosting subscription');
     } finally {
       await context.reset();
@@ -65,12 +67,123 @@ test('GET /api/expenses', async (suite) => {
     }
   });
 
+  await suite.test('returns only records created within the requested date range', async () => {
+    const context = getContext();
+
+    try {
+      await seedApiFixture({
+        database: context.database,
+        fixture: createApiFixture({
+          expenses: [
+            {
+              id: 'expense-january',
+              amount: -2500,
+              tagId: 'tag-work',
+              description: 'January hosting subscription',
+              createdAt: new Date('2026-01-02T03:04:05.000Z'),
+              updatedAt: new Date('2026-01-02T03:04:05.000Z'),
+            },
+            {
+              id: 'expense-february',
+              amount: -3000,
+              tagId: 'tag-work',
+              description: 'February hosting subscription',
+              createdAt: new Date('2026-02-02T03:04:05.000Z'),
+              updatedAt: new Date('2026-02-02T03:04:05.000Z'),
+            },
+          ],
+        }),
+      });
+      const response = await context.fetch(
+        '/api/expenses?from=2026-01-02T00%3A00%3A00.000Z&to=2026-01-31T23%3A59%3A59.999Z',
+      );
+      const payload = (await response.json()) as {
+        readonly ok: boolean;
+        readonly value: readonly { readonly id: string }[];
+      };
+
+      assert.equal(response.status, 200);
+      assert.equal(payload.ok, true);
+      assert.deepEqual(
+        payload.value.map((expense) => expense.id),
+        ['expense-january'],
+      );
+    } finally {
+      await context.reset();
+    }
+  });
+
+  await suite.test(
+    'returns records from the supplied start date when no end date is given',
+    async () => {
+      const context = getContext();
+
+      try {
+        await seedApiFixture({ database: context.database, fixture: createApiFixture() });
+        const response = await context.fetch('/api/expenses?from=2026-01-01T00%3A00%3A00.000Z');
+        const payload = (await response.json()) as {
+          readonly ok: boolean;
+          readonly value: readonly { readonly id: string }[];
+        };
+
+        assert.equal(response.status, 200);
+        assert.equal(payload.ok, true);
+        assert.deepEqual(
+          payload.value.map((expense) => expense.id),
+          ['expense-hosting'],
+        );
+      } finally {
+        await context.reset();
+      }
+    },
+  );
+
+  await suite.test(
+    'returns records through the supplied end date when no start date is given',
+    async () => {
+      const context = getContext();
+
+      try {
+        await seedApiFixture({ database: context.database, fixture: createApiFixture() });
+        const response = await context.fetch('/api/expenses?to=2026-01-31T23%3A59%3A59.999Z');
+        const payload = (await response.json()) as {
+          readonly ok: boolean;
+          readonly value: readonly { readonly id: string }[];
+        };
+
+        assert.equal(response.status, 200);
+        assert.equal(payload.ok, true);
+        assert.deepEqual(
+          payload.value.map((expense) => expense.id),
+          ['expense-hosting'],
+        );
+      } finally {
+        await context.reset();
+      }
+    },
+  );
+
+  await suite.test('rejects a date range whose start is after its end', async () => {
+    const context = getContext();
+
+    try {
+      const response = await context.fetch(
+        '/api/expenses?from=2026-02-01T00%3A00%3A00.000Z&to=2026-01-01T00%3A00%3A00.000Z',
+      );
+
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { ok: false, error: 'Invalid request' });
+    } finally {
+      await context.reset();
+    }
+  });
+
   await suite.test('returns an empty list when the requested tag does not exist', async () => {
     const context = getContext();
 
     try {
       await seedApiFixture({ database: context.database, fixture: createApiFixture() });
-      const response = await context.fetch('/api/expenses?tagId=tag-missing');
+      const response = await context.fetch('/api/expenses?tag=missing');
       const payload = (await response.json()) as {
         readonly ok: boolean;
         readonly value: readonly unknown[];
@@ -87,7 +200,7 @@ test('GET /api/expenses', async (suite) => {
 
 /** Groups expense-create behavior by its public write endpoint. */
 test('POST /api/expenses', async (suite) => {
-  await suite.test('creates a new untagged expense', async () => {
+  await suite.test('creates a missing tag before persisting a tagged expense', async () => {
     const context = getContext();
 
     try {
@@ -97,7 +210,7 @@ test('POST /api/expenses', async (suite) => {
         body: JSON.stringify({
           amount: -750,
           description: 'Domain renewal',
-          tagIds: [],
+          tag: 'finance',
         }),
       });
       const payload = (await response.json()) as {
@@ -106,15 +219,61 @@ test('POST /api/expenses', async (suite) => {
           readonly id: string;
           readonly amount: number;
           readonly description: string | null;
-          readonly tagId: string | null;
+          readonly tag: string | null;
         };
+      };
+      const tagsResponse = await context.fetch('/api/tags?label=finance');
+      const storedTags = (await tagsResponse.json()) as {
+        readonly ok: boolean;
+        readonly value: readonly { readonly label: string }[];
       };
 
       assert.equal(response.status, 201);
       assert.equal(payload.ok, true);
       assert.equal(payload.value.amount, -750);
       assert.equal(payload.value.description, 'Domain renewal');
-      assert.equal(payload.value.tagId, null);
+      assert.equal(payload.value.tag, 'finance');
+      assert.equal(tagsResponse.status, 200);
+      assert.equal(storedTags.ok, true);
+      assert.deepEqual(
+        storedTags.value.map((tag) => tag.label),
+        ['finance'],
+      );
+    } finally {
+      await context.reset();
+    }
+  });
+
+  await suite.test('reuses an existing tag label for a new expense', async () => {
+    const context = getContext();
+
+    try {
+      await seedApiFixture({ database: context.database, fixture: createApiFixture() });
+      const response = await context.fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ amount: -500, description: 'Existing tag expense', tag: 'work' }),
+      });
+      const payload = (await response.json()) as {
+        readonly ok: boolean;
+        readonly value: { readonly amount: number; readonly tag: string | null };
+      };
+      const tagsResponse = await context.fetch('/api/tags?label=work');
+      const storedTags = (await tagsResponse.json()) as {
+        readonly ok: boolean;
+        readonly value: readonly { readonly label: string }[];
+      };
+
+      assert.equal(response.status, 201);
+      assert.equal(payload.ok, true);
+      assert.equal(payload.value.amount, -500);
+      assert.equal(payload.value.tag, 'work');
+      assert.equal(tagsResponse.status, 200);
+      assert.equal(storedTags.ok, true);
+      assert.deepEqual(
+        storedTags.value.map((tag) => tag.label),
+        ['work'],
+      );
     } finally {
       await context.reset();
     }
@@ -127,7 +286,7 @@ test('POST /api/expenses', async (suite) => {
       const response = await context.fetch('/api/expenses', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ amount: '750', description: 'Invalid', tagIds: [] }),
+        body: JSON.stringify({ amount: '750', description: 'Invalid', tag: null }),
       });
 
       assert.equal(response.status, 400);
@@ -151,7 +310,7 @@ test('PUT /api/expenses/:id', async (suite) => {
         body: JSON.stringify({
           amount: -3000,
           description: 'Annual hosting subscription',
-          tagIds: [],
+          tag: 'work',
         }),
       });
       const payload = (await response.json()) as {
@@ -180,7 +339,7 @@ test('PUT /api/expenses/:id', async (suite) => {
       const response = await context.fetch('/api/expenses/expense-missing', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ amount: -3000, description: null, tagIds: [] }),
+        body: JSON.stringify({ amount: -3000, description: null, tag: null }),
       });
 
       assert.equal(response.status, 404);
@@ -203,7 +362,7 @@ test('DELETE /api/expenses', async (suite) => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ ids: ['expense-hosting'] }),
       });
-      const listResponse = await context.fetch('/api/expenses?tagId=tag-work');
+      const listResponse = await context.fetch('/api/expenses?tag=work');
       const listed = (await listResponse.json()) as {
         readonly ok: boolean;
         readonly value: readonly unknown[];

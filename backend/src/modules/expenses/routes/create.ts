@@ -30,7 +30,7 @@ export const createExpenseSchema: EndpointValidationSchema<
   body: z.object({
     amount: z.number(),
     description: z.string().nullable(),
-    tagIds: z.array(z.string()),
+    tag: z.string().trim().min(1).nullable(),
   }),
   params: z.object({}),
   query: z.object({}),
