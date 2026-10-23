@@ -1,5 +1,5 @@
 /** Limits task lifecycle state to the values described by the domain. */
-export type TaskStatus = "undone" | "inProgress" | "done";
+export type TaskStatus = 'undone' | 'inProgress' | 'done';
 
 /** Represents a fully hydrated task returned from the Tasks module. */
 export interface Task {
@@ -41,6 +41,12 @@ export interface TasksService {
   remove(ids: readonly string[]): Promise<void>;
   get(ids: readonly string[]): Promise<readonly Task[]>;
   find(filters: TaskFilters): Promise<readonly Task[]>;
-  findNoteByTitleAndLink(params: { readonly taskId: string; readonly title: string }): Promise<string | null>;
-  findTaskByTitleAndLink(params: { readonly taskId: string; readonly title: string }): Promise<string | null>;
+  findNoteByTitleAndLink(params: {
+    readonly taskId: string;
+    readonly title: string;
+  }): Promise<string | null>;
+  findTaskByTitleAndLink(params: {
+    readonly taskId: string;
+    readonly title: string;
+  }): Promise<string | null>;
 }

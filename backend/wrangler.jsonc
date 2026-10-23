@@ -7,8 +7,8 @@
     {
       "binding": "DB",
       "database_name": "noetis",
-      "database_id": "replace-with-your-d1-database-id"
-    }
+      "database_id": "replace-with-your-d1-database-id",
+    },
   ],
 
   "assets": {

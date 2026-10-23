@@ -3,13 +3,13 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { failure, success } from "../../common/utils/result";
-import { expenseServiceFactory } from "../services/expense-service";
-import type { ExpenseInput } from "../types";
-import { createExpenseSchema } from "./create";
-import { z } from "zod";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { failure, success } from '../../common/utils/result';
+import { expenseServiceFactory } from '../services/expense-service';
+import type { ExpenseInput } from '../types';
+import { createExpenseSchema } from './create';
+import { z } from 'zod';
 
 /** Defines the path parameters accepted by the Expense update endpoint. */
 export interface UpdateExpenseParams {
@@ -37,22 +37,17 @@ export const updateExpenseSchema: EndpointValidationSchema<
 };
 
 /** Validates every request part required by the Expense update endpoint. */
-export const validateUpdateExpense =
-  validationMiddlewareFactory(updateExpenseSchema);
+export const validateUpdateExpense = validationMiddlewareFactory(updateExpenseSchema);
 
 /** Creates the handler that replaces one already-validated expense record. */
 export const updateExpenseHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: UpdateExpenseRequestContext): Promise<Response> => {
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      const record = await expenseServiceFactory(database).update({
-        id: context.validatedReq.params.id,
-        input: context.validatedReq.body,
-      });
-      return record === null
-        ? context.json(failure("Expense not found"), 404)
-        : context.json(success(record));
-    },
-  );
+  validatedHandler(async (context: UpdateExpenseRequestContext): Promise<Response> => {
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    const record = await expenseServiceFactory(database).update({
+      id: context.validatedReq.params.id,
+      input: context.validatedReq.body,
+    });
+    return record === null
+      ? context.json(failure('Expense not found'), 404)
+      : context.json(success(record));
+  });

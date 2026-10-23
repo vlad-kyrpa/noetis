@@ -1,4 +1,4 @@
-import type { CollectionDiff } from "../types";
+import type { CollectionDiff } from '../types';
 
 /** Finds the additions, retained values, and removals needed to reach a desired collection. */
 export const collectionDiff = <T>(params: {

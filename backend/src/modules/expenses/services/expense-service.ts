@@ -1,7 +1,7 @@
-import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
-import { expenses } from "../../../database/schema";
-import type { Database } from "../../Database";
-import type { ExpenseFilters, ExpenseInput, ExpensesService } from "../types";
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { expenses } from '../../../database/schema';
+import type { Database } from '../../Database';
+import type { ExpenseFilters, ExpenseInput, ExpensesService } from '../types';
 
 /** Builds the documented Expenses service on top of the D1 database abstraction. */
 export const expenseServiceFactory = (database: Database): ExpensesService => ({
@@ -15,7 +15,7 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
 
     const record = rows[0];
     if (record === undefined) {
-      throw new Error("Created expense was not found");
+      throw new Error('Created expense was not found');
     }
 
     return record;
@@ -36,15 +36,9 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
 
   find: async (filters: ExpenseFilters) => {
     const conditions = [
-      filters.tagId === undefined
-        ? undefined
-        : eq(expenses.tagId, filters.tagId),
-      filters.from === undefined
-        ? undefined
-        : gte(expenses.createdAt, filters.from),
-      filters.to === undefined
-        ? undefined
-        : lte(expenses.createdAt, filters.to),
+      filters.tagId === undefined ? undefined : eq(expenses.tagId, filters.tagId),
+      filters.from === undefined ? undefined : gte(expenses.createdAt, filters.from),
+      filters.to === undefined ? undefined : lte(expenses.createdAt, filters.to),
     ].filter((condition) => condition !== undefined);
 
     return database

@@ -3,12 +3,12 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { success } from "../../common/utils/result";
-import { expenseServiceFactory } from "../services/expense-service";
-import type { ExpenseInput } from "../types";
-import { z } from "zod";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { success } from '../../common/utils/result';
+import { expenseServiceFactory } from '../services/expense-service';
+import type { ExpenseInput } from '../types';
+import { z } from 'zod';
 
 /** Represents the absence of path parameters on the create endpoint. */
 export type CreateExpenseParams = EmptyObject;
@@ -37,23 +37,14 @@ export const createExpenseSchema: EndpointValidationSchema<
 };
 
 /** Validates every request part required by the create endpoint. */
-export const validateCreateExpense =
-  validationMiddlewareFactory(createExpenseSchema);
+export const validateCreateExpense = validationMiddlewareFactory(createExpenseSchema);
 
 /** Creates the handler that persists one already-validated expense record. */
 export const createExpenseHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: CreateExpenseRequestContext): Promise<Response> => {
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      return context.json(
-        success(
-          await expenseServiceFactory(database).create(
-            context.validatedReq.body,
-          ),
-        ),
-        201,
-      );
-    },
-  );
+  validatedHandler(async (context: CreateExpenseRequestContext): Promise<Response> => {
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    return context.json(
+      success(await expenseServiceFactory(database).create(context.validatedReq.body)),
+      201,
+    );
+  });

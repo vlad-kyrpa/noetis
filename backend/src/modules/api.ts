@@ -1,6 +1,6 @@
-import type { Hono } from "hono";
-import type { Database } from "./Database";
-import { failure } from "./common/types";
+import type { Hono } from 'hono';
+import type { Database } from './Database';
+import { failure } from './common/types';
 
 /** Describes the D1 binding exposed to every API route. */
 export interface ApiBindings {
@@ -15,6 +15,6 @@ export interface ApiDependencies {
 
 /** Installs API-wide behavior that does not belong to a feature module. */
 export const registerApi = (params: ApiDependencies): void => {
-  params.app.get("/api/health", (context) => context.json({ ok: true }));
-  params.app.notFound((context) => context.json(failure("Not found"), 404));
+  params.app.get('/api/health', (context) => context.json({ ok: true }));
+  params.app.notFound((context) => context.json(failure('Not found'), 404));
 };

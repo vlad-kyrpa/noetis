@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { TagInput } from "../types";
+import { z } from 'zod';
+import type { TagInput } from '../types';
 
 /** Represents the payload accepted when a tag is created. */
 export type CreateTagInput = TagInput;

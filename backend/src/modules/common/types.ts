@@ -1,4 +1,4 @@
-import { Database } from "../Database";
+import { Database } from '../Database';
 
 /** Represents an endpoint request part that intentionally carries no fields. */
 export type EmptyObject = Record<never, never>;

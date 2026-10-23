@@ -3,23 +3,19 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { success } from "../../common/utils/result";
-import { taskServiceFactory } from "../services/task-service";
-import type { TaskInput } from "../types";
-import { z } from "zod";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { success } from '../../common/utils/result';
+import { taskServiceFactory } from '../services/task-service';
+import type { TaskInput } from '../types';
+import { z } from 'zod';
 
 /** Represents the absence of path parameters on the Task create endpoint. */
 export type CreateTaskParams = EmptyObject;
 /** Represents the absence of query parameters on the Task create endpoint. */
 export type CreateTaskQuery = EmptyObject;
 /** Gives the create handler its endpoint-specific validated request contract. */
-export type CreateTaskRequestContext = RequestContext<
-  TaskInput,
-  CreateTaskParams,
-  CreateTaskQuery
->;
+export type CreateTaskRequestContext = RequestContext<TaskInput, CreateTaskParams, CreateTaskQuery>;
 
 /** Defines the complete task write model accepted by Tasks endpoints. */
 export const taskInputSchema: z.ZodType<TaskInput> = z.object({
@@ -27,7 +23,7 @@ export const taskInputSchema: z.ZodType<TaskInput> = z.object({
   description: z.string().nullable(),
   tagId: z.string().nullable(),
   dueTo: z.string().nullable(),
-  status: z.enum(["undone", "inProgress", "done"]),
+  status: z.enum(['undone', 'inProgress', 'done']),
   linkedTaskIds: z.array(z.string().min(1)).default([]),
   linkedNoteIds: z.array(z.string().min(1)).default([]),
 });
@@ -48,16 +44,10 @@ export const validateCreateTask = validationMiddlewareFactory(createTaskSchema);
 
 /** Creates the handler that persists one already-validated task record. */
 export const createTaskHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: CreateTaskRequestContext): Promise<Response> => {
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      return context.json(
-        success(
-          await taskServiceFactory(database).create(context.validatedReq.body),
-        ),
-        201,
-      );
-    },
-  );
+  validatedHandler(async (context: CreateTaskRequestContext): Promise<Response> => {
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    return context.json(
+      success(await taskServiceFactory(database).create(context.validatedReq.body)),
+      201,
+    );
+  });

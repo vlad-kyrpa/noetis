@@ -3,11 +3,11 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { success } from "../../common/utils/result";
-import { taskServiceFactory } from "../services/task-service";
-import { z } from "zod";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { success } from '../../common/utils/result';
+import { taskServiceFactory } from '../services/task-service';
+import { z } from 'zod';
 
 /** Defines the command accepted by the Task delete endpoint. */
 export interface RemoveTasksBody {
@@ -41,13 +41,9 @@ export const validateRemoveTasks = validationMiddlewareFactory(removeTasksSchema
 
 /** Creates the handler that removes already-validated Task record identifiers. */
 export const removeTasksHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: RemoveTasksRequestContext): Promise<Response> => {
-      const body = context.validatedReq.body;
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      await taskServiceFactory(database).remove(body.ids);
-      return context.json(success(body));
-    },
-  );
+  validatedHandler(async (context: RemoveTasksRequestContext): Promise<Response> => {
+    const body = context.validatedReq.body;
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    await taskServiceFactory(database).remove(body.ids);
+    return context.json(success(body));
+  });

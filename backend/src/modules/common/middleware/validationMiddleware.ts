@@ -1,6 +1,6 @@
-import type { Context, MiddlewareHandler } from "hono";
-import { z } from "zod";
-import { failure } from "../utils/result";
+import type { Context, MiddlewareHandler } from 'hono';
+import { z } from 'zod';
+import { failure } from '../utils/result';
 
 /** Holds request parts that have passed an endpoint's validation schema. */
 export interface ValidatedRequest<Body, Params, Query> {
@@ -36,9 +36,7 @@ export const validatedHandler =
 
 /** Validates body, path params, and query once before exposing them to a typed handler. */
 export const validationMiddlewareFactory =
-  <Body, Params, Query>(
-    schema: EndpointValidationSchema<Body, Params, Query>,
-  ): MiddlewareHandler =>
+  <Body, Params, Query>(schema: EndpointValidationSchema<Body, Params, Query>): MiddlewareHandler =>
   async (context, next): Promise<Response | void> => {
     const rawBody: unknown = await context.req.json().catch(() => undefined);
 
@@ -51,7 +49,7 @@ export const validationMiddlewareFactory =
     const invalidRequest = !body.success || !params.success || !query.success;
 
     if (invalidRequest) {
-      return context.json(failure("Invalid request"), 400);
+      return context.json(failure('Invalid request'), 400);
     }
 
     const validatedContext = context as RequestContext<Body, Params, Query>;

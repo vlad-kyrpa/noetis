@@ -3,23 +3,19 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { success } from "../../common/utils/result";
-import { noteServiceFactory } from "../services/note-service";
-import type { NoteInput } from "../types";
-import { z } from "zod";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { success } from '../../common/utils/result';
+import { noteServiceFactory } from '../services/note-service';
+import type { NoteInput } from '../types';
+import { z } from 'zod';
 
 /** Represents the absence of path parameters on the Note create endpoint. */
 export type CreateNoteParams = EmptyObject;
 /** Represents the absence of query parameters on the Note create endpoint. */
 export type CreateNoteQuery = EmptyObject;
 /** Gives the create handler its endpoint-specific validated request contract. */
-export type CreateNoteRequestContext = RequestContext<
-  NoteInput,
-  CreateNoteParams,
-  CreateNoteQuery
->;
+export type CreateNoteRequestContext = RequestContext<NoteInput, CreateNoteParams, CreateNoteQuery>;
 
 /** Defines the complete note write model accepted by Notes endpoints. */
 export const noteInputSchema: z.ZodType<NoteInput> = z.object({
@@ -46,16 +42,10 @@ export const validateCreateNote = validationMiddlewareFactory(createNoteSchema);
 
 /** Creates the handler that persists one already-validated note record. */
 export const createNoteHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: CreateNoteRequestContext): Promise<Response> => {
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      return context.json(
-        success(
-          await noteServiceFactory(database).create(context.validatedReq.body),
-        ),
-        201,
-      );
-    },
-  );
+  validatedHandler(async (context: CreateNoteRequestContext): Promise<Response> => {
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    return context.json(
+      success(await noteServiceFactory(database).create(context.validatedReq.body)),
+      201,
+    );
+  });

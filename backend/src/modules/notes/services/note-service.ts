@@ -1,13 +1,8 @@
-import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
-import {
-  noteLinks,
-  noteTags,
-  noteTasks,
-  notes,
-} from "../../../database/schema";
-import type { Database } from "../../Database";
-import { collectionDiff } from "../../common/utils/collections";
-import type { Note, NoteFilters, NoteInput, NotesService } from "../types";
+import { and, desc, eq, inArray, like, sql } from 'drizzle-orm';
+import { noteLinks, noteTags, noteTasks, notes } from '../../../database/schema';
+import type { Database } from '../../Database';
+import { collectionDiff } from '../../common/utils/collections';
+import type { Note, NoteFilters, NoteInput, NotesService } from '../types';
 
 /** Synchronizes each note relation table using only the changes from the requested IDs. */
 const replaceRelations = async (params: {
@@ -18,14 +13,8 @@ const replaceRelations = async (params: {
   const { database, noteId, input } = params;
 
   const [storedTags, storedTasks, storedLinks] = await Promise.all([
-    database
-      .select({ id: noteTags.tagId })
-      .from(noteTags)
-      .where(eq(noteTags.noteId, noteId)),
-    database
-      .select({ id: noteTasks.taskId })
-      .from(noteTasks)
-      .where(eq(noteTasks.noteId, noteId)),
+    database.select({ id: noteTags.tagId }).from(noteTags).where(eq(noteTags.noteId, noteId)),
+    database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, noteId)),
     database
       .select({ id: noteLinks.linkedNoteId })
       .from(noteLinks)
@@ -50,31 +39,18 @@ const replaceRelations = async (params: {
       ? Promise.resolve()
       : database
           .delete(noteTags)
-          .where(
-            and(
-              eq(noteTags.noteId, noteId),
-              inArray(noteTags.tagId, tagChanges.removed),
-            ),
-          ),
+          .where(and(eq(noteTags.noteId, noteId), inArray(noteTags.tagId, tagChanges.removed))),
     taskChanges.removed.length === 0
       ? Promise.resolve()
       : database
           .delete(noteTasks)
-          .where(
-            and(
-              eq(noteTasks.noteId, noteId),
-              inArray(noteTasks.taskId, taskChanges.removed),
-            ),
-          ),
+          .where(and(eq(noteTasks.noteId, noteId), inArray(noteTasks.taskId, taskChanges.removed))),
     linkChanges.removed.length === 0
       ? Promise.resolve()
       : database
           .delete(noteLinks)
           .where(
-            and(
-              eq(noteLinks.noteId, noteId),
-              inArray(noteLinks.linkedNoteId, linkChanges.removed),
-            ),
+            and(eq(noteLinks.noteId, noteId), inArray(noteLinks.linkedNoteId, linkChanges.removed)),
           ),
   ]);
 
@@ -83,16 +59,10 @@ const replaceRelations = async (params: {
       database.insert(noteTags).values({ noteId, tagId }).onConflictDoNothing(),
     ),
     ...taskChanges.added.map((taskId) =>
-      database
-        .insert(noteTasks)
-        .values({ noteId, taskId })
-        .onConflictDoNothing(),
+      database.insert(noteTasks).values({ noteId, taskId }).onConflictDoNothing(),
     ),
     ...linkChanges.added.map((linkedNoteId) =>
-      database
-        .insert(noteLinks)
-        .values({ noteId, linkedNoteId })
-        .onConflictDoNothing(),
+      database.insert(noteLinks).values({ noteId, linkedNoteId }).onConflictDoNothing(),
     ),
   ]);
 };
@@ -104,14 +74,8 @@ const hydrateNote = async (params: {
 }): Promise<Note> => {
   const { database, note } = params;
   const [tags, linkedTasks, linkedNotes] = await Promise.all([
-    database
-      .select({ id: noteTags.tagId })
-      .from(noteTags)
-      .where(eq(noteTags.noteId, note.id)),
-    database
-      .select({ id: noteTasks.taskId })
-      .from(noteTasks)
-      .where(eq(noteTasks.noteId, note.id)),
+    database.select({ id: noteTags.tagId }).from(noteTags).where(eq(noteTags.noteId, note.id)),
+    database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, note.id)),
     database
       .select({ id: noteLinks.linkedNoteId })
       .from(noteLinks)
@@ -141,13 +105,9 @@ export const noteServiceFactory = (database: Database): NotesService => ({
 
     await replaceRelations({ database, noteId: id, input });
 
-    const note = await database
-      .select()
-      .from(notes)
-      .where(eq(notes.id, id))
-      .get();
+    const note = await database.select().from(notes).where(eq(notes.id, id)).get();
     if (note === undefined) {
-      throw new Error("Created note was not found");
+      throw new Error('Created note was not found');
     }
 
     return hydrateNote({ database, note });
@@ -175,8 +135,8 @@ export const noteServiceFactory = (database: Database): NotesService => ({
 
   get: async (ids) =>
     Promise.all(
-      (await database.select().from(notes).where(inArray(notes.id, ids))).map(
-        (note) => hydrateNote({ database, note }),
+      (await database.select().from(notes).where(inArray(notes.id, ids))).map((note) =>
+        hydrateNote({ database, note }),
       ),
     ),
 

@@ -3,11 +3,11 @@ import {
   type RequestContext,
   validatedHandler,
   validationMiddlewareFactory,
-} from "../../common/middleware/validationMiddleware";
-import { type EmptyObject, RouteHandlerDependencies } from "../../common/types";
-import { success } from "../../common/utils/result";
-import { z } from "zod";
-import { expenseServiceFactory } from "../services/expense-service";
+} from '../../common/middleware/validationMiddleware';
+import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
+import { success } from '../../common/utils/result';
+import { z } from 'zod';
+import { expenseServiceFactory } from '../services/expense-service';
 
 /** Defines the command accepted by the Expense delete endpoint. */
 export interface RemoveExpensesBody {
@@ -37,18 +37,13 @@ export const removeExpensesSchema: EndpointValidationSchema<
 };
 
 /** Validates every request part required by the Expense delete endpoint. */
-export const validateRemoveExpenses =
-  validationMiddlewareFactory(removeExpensesSchema);
+export const validateRemoveExpenses = validationMiddlewareFactory(removeExpensesSchema);
 
 /** Creates the handler that removes already-validated Expense record identifiers. */
 export const removeExpensesHandler = (dependencies: RouteHandlerDependencies) =>
-  validatedHandler(
-    async (context: RemoveExpensesRequestContext): Promise<Response> => {
-      const body = context.validatedReq.body;
-      const database = dependencies.databaseFactory(
-        (context.env as { readonly DB: D1Database }).DB,
-      );
-      await expenseServiceFactory(database).remove(body.ids);
-      return context.json(success(body));
-    },
-  );
+  validatedHandler(async (context: RemoveExpensesRequestContext): Promise<Response> => {
+    const body = context.validatedReq.body;
+    const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
+    await expenseServiceFactory(database).remove(body.ids);
+    return context.json(success(body));
+  });

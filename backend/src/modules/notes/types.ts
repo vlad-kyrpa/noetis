@@ -29,10 +29,7 @@ export interface NoteFilters {
 /** Defines the storage-agnostic behavior exposed by the Notes module. */
 export interface NotesService {
   create(input: NoteInput): Promise<Note>;
-  update(params: {
-    readonly id: string;
-    readonly input: NoteInput;
-  }): Promise<Note | null>;
+  update(params: { readonly id: string; readonly input: NoteInput }): Promise<Note | null>;
   remove(ids: readonly string[]): Promise<void>;
   get(ids: readonly string[]): Promise<readonly Note[]>;
   find(filters: NoteFilters): Promise<readonly Note[]>;
