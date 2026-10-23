@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "noetis-e2e",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-05",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "noetis-e2e",
+      "database_id": "local-test-database",
+      "migrations_dir": "drizzle",
+    },
+  ],
+}

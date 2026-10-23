@@ -7,6 +7,7 @@
     "dev": "wrangler dev",
     "types": "wrangler types --env-interface CloudflareBindings",
     "test": "tsx --test src/**/*.test.ts",
+    "test:e2e": "tsx --test src/e2e/**/*.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
