@@ -1,6 +1,6 @@
 import type { Hono } from 'hono';
 import type { Database } from './Database';
-import { failure } from './common/types';
+import { failure } from './common/utils/result';
 
 /** Describes the D1 binding exposed to every API route. */
 export interface ApiBindings {

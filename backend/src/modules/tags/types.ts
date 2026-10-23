@@ -12,6 +12,7 @@ export interface TagInput {
 
 /** Defines the storage-agnostic behavior exposed by the Tags module. */
 export interface TagsService {
-  create(input: TagInput): Promise<Tag>;
+  create(input: TagInput): Promise<Tag | null>;
   find(label: string | null): Promise<readonly Tag[]>;
+  remove(ids: readonly string[]): Promise<void>;
 }

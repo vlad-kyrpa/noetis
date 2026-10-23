@@ -8,7 +8,7 @@ import { registerTaskRoutes } from './modules/tasks/controller';
 
 /** Hosts the HTTP API in Cloudflare's serverless runtime. */
 const app = new Hono<{ Bindings: ApiBindings }>();
-const dependencies = { app, database: createDatabase };
+const dependencies = { app, databaseFactory: createDatabase };
 
 registerApi(dependencies);
 registerTagRoutes(dependencies);

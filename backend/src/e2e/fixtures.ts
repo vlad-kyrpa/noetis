@@ -1,4 +1,13 @@
-import { noteTags, noteTasks, notes, tags, taskLinks, taskNotes, tasks } from '../database/schema';
+import {
+  expenses,
+  noteTags,
+  noteTasks,
+  notes,
+  tags,
+  taskLinks,
+  taskNotes,
+  tasks,
+} from '../database/schema';
 import type { Database } from '../modules/Database';
 
 /**
@@ -14,6 +23,7 @@ export interface ApiFixture {
   readonly tags: (typeof tags.$inferInsert)[];
   readonly notes: (typeof notes.$inferInsert)[];
   readonly tasks: (typeof tasks.$inferInsert)[];
+  readonly expenses: (typeof expenses.$inferInsert)[];
   readonly noteTags: (typeof noteTags.$inferInsert)[];
   readonly noteTasks: (typeof noteTasks.$inferInsert)[];
   readonly taskLinks: (typeof taskLinks.$inferInsert)[];
@@ -47,6 +57,16 @@ export const createApiFixture = (overrides: ApiFixtureOverrides = {}): ApiFixtur
         updatedAt,
       },
     ],
+    expenses: [
+      {
+        id: 'expense-hosting',
+        amount: -2500,
+        tagId: 'tag-work',
+        description: 'Hosting subscription',
+        createdAt,
+        updatedAt,
+      },
+    ],
     noteTags: [{ noteId: 'note-plan', tagId: 'tag-work' }],
     noteTasks: [{ noteId: 'note-plan', taskId: 'task-ship' }],
     taskLinks: [],
@@ -62,14 +82,17 @@ export const seedApiFixture = async (params: {
 }): Promise<void> => {
   const { database, fixture } = params;
 
-  // Insert independent records first; both notes and tasks can reference tags.
+  // Insert independent records first; notes, tasks, and expenses can reference tags.
   await Promise.all([
     fixture.tags.length === 0 ? Promise.resolve() : database.insert(tags).values(fixture.tags),
     fixture.notes.length === 0 ? Promise.resolve() : database.insert(notes).values(fixture.notes),
   ]);
-  await (fixture.tasks.length === 0
-    ? Promise.resolve()
-    : database.insert(tasks).values(fixture.tasks));
+  await Promise.all([
+    fixture.tasks.length === 0 ? Promise.resolve() : database.insert(tasks).values(fixture.tasks),
+    fixture.expenses.length === 0
+      ? Promise.resolve()
+      : database.insert(expenses).values(fixture.expenses),
+  ]);
   // Insert relationship rows only after every referenced record exists.
   await Promise.all([
     fixture.noteTags.length === 0

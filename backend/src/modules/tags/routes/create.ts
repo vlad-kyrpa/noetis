@@ -5,7 +5,7 @@ import {
   validationMiddlewareFactory,
 } from '../../common/middleware/validationMiddleware';
 import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
-import { success } from '../../common/utils/result';
+import { failure, success } from '../../common/utils/result';
 import { tagServiceFactory } from '../services/tag-service';
 import type { TagInput } from '../types';
 import { tagInputSchema } from './create.validation';
@@ -33,8 +33,8 @@ export const validateCreateTag = validationMiddlewareFactory(createTagSchema);
 export const createTagHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateTagRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    return context.json(
-      success(await tagServiceFactory(database).create(context.validatedReq.body)),
-      201,
-    );
+    const tag = await tagServiceFactory(database).create(context.validatedReq.body);
+    return tag === null
+      ? context.json(failure('Tag label already exists'), 409)
+      : context.json(success(tag), 201);
   });

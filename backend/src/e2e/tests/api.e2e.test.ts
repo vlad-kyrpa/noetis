@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
-import { createApiTestContext } from './api-test-context';
-import { createApiFixture, seedApiFixture } from './fixtures';
+import { createApiTestContext } from '../api-test-context';
+import { createApiFixture, seedApiFixture } from '../fixtures';
 
 /** Verifies an API query reads records and relationships from a migrated local D1 database. */
 test('GET /api/notes filters seeded records and returns their relationships', async () => {
@@ -21,9 +21,10 @@ test('GET /api/notes filters seeded records and returns their relationships', as
 
     assert.equal(response.status, 200);
     assert.equal(payload.ok, true);
-    assert.deepEqual(payload.value, [
-      { id: 'note-plan', tagIds: ['tag-work'], linkedTaskIds: ['task-ship'] },
-    ]);
+    assert.equal(payload.value.length, 1);
+    assert.equal(payload.value[0]?.id, 'note-plan');
+    assert.deepEqual(payload.value[0]?.tagIds, ['tag-work']);
+    assert.deepEqual(payload.value[0]?.linkedTaskIds, ['task-ship']);
   } finally {
     await context.close();
   }
@@ -66,7 +67,9 @@ test('POST /api/tasks persists a task that can be read through the API', async (
     assert.deepEqual(created.value.linkedNoteIds, ['note-plan']);
     assert.equal(listResponse.status, 200);
     assert.equal(listed.ok, true);
-    assert.deepEqual(listed.value, [{ id: created.value.id, title: 'Review release' }]);
+    assert.equal(listed.value.length, 1);
+    assert.equal(listed.value[0]?.id, created.value.id);
+    assert.equal(listed.value[0]?.title, 'Review release');
   } finally {
     await context.close();
   }
