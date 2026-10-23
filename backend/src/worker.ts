@@ -1,20 +1,19 @@
 import { Hono } from "hono";
+import { createDatabase } from "./modules/LocalSqLiteDatabase";
+import { registerApi, type ApiBindings } from "./modules/api";
+import { registerExpensesRoutes } from "./modules/expenses/controller";
+import { registerNotesRoutes } from "./modules/notes/controller";
+import { registerTagRoutes } from "./modules/tags/controller";
+import { registerTaskRoutes } from "./modules/tasks/controller";
 
-type Bindings = {
-  secret: 0;
-  // secrets, db creds
-};
+/** Hosts the HTTP API in Cloudflare's serverless runtime. */
+const app = new Hono<{ Bindings: ApiBindings }>();
+const dependencies = { app, database: createDatabase };
 
-const app = new Hono<{ Bindings: Bindings }>();
-
-app.get("/api/hello", (context) => {
-  return context.json({ message: "hello world" });
-});
-
-app.get("/api/health", (context) => {
-  return context.json({ ok: true });
-});
-
-app.notFound((context) => context.json({ error: "Not found" }, 404));
+registerApi(dependencies);
+registerTagRoutes(dependencies);
+registerNotesRoutes(dependencies);
+registerTaskRoutes(dependencies);
+registerExpensesRoutes(dependencies);
 
 export default app;

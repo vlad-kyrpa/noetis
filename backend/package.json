@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "types": "wrangler types --env-interface CloudflareBindings",
+    "test": "tsx --test src/**/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply --local",
     "db:migrate:remote": "wrangler d1 migrations apply --remote",
@@ -21,12 +24,14 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.10.0",
     "globals": "^17.12.0",
+    "prettier": "3.9.10",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.69.0",
     "wrangler": "^4.147.0"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
-    "hono": "^4.13.13"
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
   }
 }

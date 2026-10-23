@@ -3,6 +3,13 @@
   "name": "noetis",
   "main": "src/worker.ts",
   "compatibility_date": "2026-10-05",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "noetis",
+      "database_id": "replace-with-your-d1-database-id"
+    }
+  ],
 
   "assets": {
     "directory": "../client/dist",

@@ -1,0 +1,204 @@
+import { and, desc, eq, inArray, like, sql } from "drizzle-orm";
+import {
+  noteLinks,
+  noteTags,
+  noteTasks,
+  notes,
+} from "../../../database/schema";
+import type { Database } from "../../Database";
+import { collectionDiff } from "../../common/utils/collections";
+import type { Note, NoteFilters, NoteInput, NotesService } from "../types";
+
+/** Synchronizes each note relation table using only the changes from the requested IDs. */
+const replaceRelations = async (params: {
+  readonly database: Database;
+  readonly noteId: string;
+  readonly input: NoteInput;
+}): Promise<void> => {
+  const { database, noteId, input } = params;
+
+  const [storedTags, storedTasks, storedLinks] = await Promise.all([
+    database
+      .select({ id: noteTags.tagId })
+      .from(noteTags)
+      .where(eq(noteTags.noteId, noteId)),
+    database
+      .select({ id: noteTasks.taskId })
+      .from(noteTasks)
+      .where(eq(noteTasks.noteId, noteId)),
+    database
+      .select({ id: noteLinks.linkedNoteId })
+      .from(noteLinks)
+      .where(eq(noteLinks.noteId, noteId)),
+  ]);
+
+  const tagChanges = collectionDiff({
+    current: storedTags.map((tag) => tag.id),
+    desired: input.tagIds,
+  });
+  const taskChanges = collectionDiff({
+    current: storedTasks.map((task) => task.id),
+    desired: input.linkedTaskIds,
+  });
+  const linkChanges = collectionDiff({
+    current: storedLinks.map((link) => link.id),
+    desired: input.linkedNoteIds.filter((id) => id !== noteId),
+  });
+
+  await Promise.all([
+    tagChanges.removed.length === 0
+      ? Promise.resolve()
+      : database
+          .delete(noteTags)
+          .where(
+            and(
+              eq(noteTags.noteId, noteId),
+              inArray(noteTags.tagId, tagChanges.removed),
+            ),
+          ),
+    taskChanges.removed.length === 0
+      ? Promise.resolve()
+      : database
+          .delete(noteTasks)
+          .where(
+            and(
+              eq(noteTasks.noteId, noteId),
+              inArray(noteTasks.taskId, taskChanges.removed),
+            ),
+          ),
+    linkChanges.removed.length === 0
+      ? Promise.resolve()
+      : database
+          .delete(noteLinks)
+          .where(
+            and(
+              eq(noteLinks.noteId, noteId),
+              inArray(noteLinks.linkedNoteId, linkChanges.removed),
+            ),
+          ),
+  ]);
+
+  await Promise.all([
+    ...tagChanges.added.map((tagId) =>
+      database.insert(noteTags).values({ noteId, tagId }).onConflictDoNothing(),
+    ),
+    ...taskChanges.added.map((taskId) =>
+      database
+        .insert(noteTasks)
+        .values({ noteId, taskId })
+        .onConflictDoNothing(),
+    ),
+    ...linkChanges.added.map((linkedNoteId) =>
+      database
+        .insert(noteLinks)
+        .values({ noteId, linkedNoteId })
+        .onConflictDoNothing(),
+    ),
+  ]);
+};
+
+/** Hydrates stored note content with its documented relation fields. */
+const hydrateNote = async (params: {
+  readonly database: Database;
+  readonly note: typeof notes.$inferSelect;
+}): Promise<Note> => {
+  const { database, note } = params;
+  const [tags, linkedTasks, linkedNotes] = await Promise.all([
+    database
+      .select({ id: noteTags.tagId })
+      .from(noteTags)
+      .where(eq(noteTags.noteId, note.id)),
+    database
+      .select({ id: noteTasks.taskId })
+      .from(noteTasks)
+      .where(eq(noteTasks.noteId, note.id)),
+    database
+      .select({ id: noteLinks.linkedNoteId })
+      .from(noteLinks)
+      .where(eq(noteLinks.noteId, note.id)),
+  ]);
+
+  return {
+    ...note,
+    tagIds: tags.map((item) => item.id),
+    linkedTaskIds: linkedTasks.map((item) => item.id),
+    linkedNoteIds: linkedNotes.map((item) => item.id),
+  };
+};
+
+/** Builds the documented Notes service on top of the D1 database abstraction. */
+export const noteServiceFactory = (database: Database): NotesService => ({
+  create: async (input) => {
+    const id = crypto.randomUUID();
+    const now = new Date();
+    await database.insert(notes).values({
+      id,
+      title: input.title,
+      body: input.body,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await replaceRelations({ database, noteId: id, input });
+
+    const note = await database
+      .select()
+      .from(notes)
+      .where(eq(notes.id, id))
+      .get();
+    if (note === undefined) {
+      throw new Error("Created note was not found");
+    }
+
+    return hydrateNote({ database, note });
+  },
+
+  update: async ({ id, input }) => {
+    const updated = await database
+      .update(notes)
+      .set({ title: input.title, body: input.body, updatedAt: new Date() })
+      .where(eq(notes.id, id))
+      .returning();
+
+    const note = updated[0];
+    if (note === undefined) {
+      return null;
+    }
+
+    await replaceRelations({ database, noteId: id, input });
+    return hydrateNote({ database, note });
+  },
+
+  remove: async (ids) => {
+    await database.delete(notes).where(inArray(notes.id, ids));
+  },
+
+  get: async (ids) =>
+    Promise.all(
+      (await database.select().from(notes).where(inArray(notes.id, ids))).map(
+        (note) => hydrateNote({ database, note }),
+      ),
+    ),
+
+  find: async (filters: NoteFilters) => {
+    const conditions = [
+      filters.title === undefined
+        ? undefined
+        : like(sql`lower(${notes.title})`, `%${filters.title.toLowerCase()}%`),
+      filters.body === undefined
+        ? undefined
+        : like(sql`lower(${notes.body})`, `%${filters.body.toLowerCase()}%`),
+      filters.tagId === undefined
+        ? undefined
+        : sql`${notes.id} in (select note_id from note_tags where tag_id = ${filters.tagId})`,
+    ].filter((condition) => condition !== undefined);
+
+    const rows = await database
+      .select()
+      .from(notes)
+      .where(conditions.length === 0 ? undefined : and(...conditions))
+      .orderBy(desc(notes.updatedAt));
+
+    return Promise.all(rows.map((note) => hydrateNote({ database, note })));
+  },
+});
