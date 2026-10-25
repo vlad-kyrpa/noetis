@@ -28,6 +28,10 @@ after(async (): Promise<void> => {
 
 /** Groups task-list behavior by its public read endpoint. */
 test('GET /api/tasks', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal((await getContext().fetch('/api/tasks', { authenticated: false })).status, 401);
+  });
+
   await suite.test('filters fixture tasks by title, status, and tag', async () => {
     const context = getContext();
 
@@ -93,6 +97,13 @@ test('GET /api/tasks', async (suite) => {
 
 /** Groups single-task lookup behavior by its public read endpoint. */
 test('GET /api/tasks/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tasks/task-id', { authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('returns the selected fixture task and its note relationship', async () => {
     const context = getContext();
 
@@ -129,6 +140,13 @@ test('GET /api/tasks/:id', async (suite) => {
 
 /** Groups task-create behavior by its public write endpoint. */
 test('POST /api/tasks', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tasks', { method: 'POST', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('creates a task associated with an existing tag and note', async () => {
     const context = getContext();
 
@@ -196,6 +214,14 @@ test('POST /api/tasks', async (suite) => {
 
 /** Groups task-replacement behavior by its public write endpoint. */
 test('PUT /api/tasks/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tasks/task-id', { method: 'PUT', authenticated: false }))
+        .status,
+      401,
+    );
+  });
+
   await suite.test('updates an existing task while preserving its tag association', async () => {
     const context = getContext();
 
@@ -261,6 +287,13 @@ test('PUT /api/tasks/:id', async (suite) => {
 
 /** Groups task-delete behavior by its public command endpoint. */
 test('DELETE /api/tasks', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tasks', { method: 'DELETE', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('removes selected fixture tasks', async () => {
     const context = getContext();
 
@@ -297,5 +330,26 @@ test('DELETE /api/tasks', async (suite) => {
     } finally {
       await context.reset();
     }
+  });
+});
+
+/** Groups task-link command authorization checks beside the module's other endpoint coverage. */
+test('POST /api/tasks/:id/links', async (suite) => {
+  await suite.test('rejects note-title linking without an access token', async () => {
+    const response = await getContext().fetch('/api/tasks/task-id/links/note-by-title', {
+      method: 'POST',
+      authenticated: false,
+    });
+
+    assert.equal(response.status, 401);
+  });
+
+  await suite.test('rejects task-title linking without an access token', async () => {
+    const response = await getContext().fetch('/api/tasks/task-id/links/task-by-title', {
+      method: 'POST',
+      authenticated: false,
+    });
+
+    assert.equal(response.status, 401);
   });
 });

@@ -47,7 +47,15 @@ npm --prefix backend run dev
 
 The Worker serves `client/dist` as its static assets and routes `/api/*` to the Hono API. Rebuild the client after UI changes before refreshing the Worker-served application. Verify that the API is running with `GET /api/health`, which returns `{ "ok": true }`.
 
-Local D1 data is isolated from Cloudflare's remote database. The configuration and migrations live in `backend/wrangler.jsonc` and `backend/drizzle/`.
+Local D1 data is isolated from Cloudflare's remote database. The configuration and migrations live in `backend/wrangler.jsonc` and `backend/drizzle/`. The migration scripts explicitly target the configured `noetis` database, as required by current Wrangler versions.
+
+Configure a local signing secret before using authentication endpoints:
+
+```powershell
+npm --prefix backend exec wrangler secret put AUTH_TOKEN_SECRET --local
+```
+
+Enter a long, random value when prompted, then restart `npm --prefix backend run dev`.
 
 ### Database changes
 
@@ -107,7 +115,13 @@ The backend end-to-end suite uses `backend/wrangler.e2e.jsonc` and an isolated l
    npm --prefix backend run db:migrate:remote
    ```
 
-The committed Wrangler configuration contains no application secrets at present. If secrets are introduced, store them with `wrangler secret put <NAME>` rather than in `wrangler.jsonc` or source control.
+Configure the authentication signing secret before deployment:
+
+```powershell
+npm --prefix backend exec wrangler secret put AUTH_TOKEN_SECRET
+```
+
+Keep this secret out of `wrangler.jsonc` and source control.
 
 ### Deploy
 

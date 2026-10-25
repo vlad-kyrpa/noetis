@@ -28,6 +28,10 @@ after(async (): Promise<void> => {
 
 /** Groups note-list behavior by its public read endpoint. */
 test('GET /api/notes', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal((await getContext().fetch('/api/notes', { authenticated: false })).status, 401);
+  });
+
   await suite.test('returns fixture records and their relationships', async () => {
     const context = getContext();
 
@@ -38,6 +42,7 @@ test('GET /api/notes', async (suite) => {
         readonly ok: boolean;
         readonly value: readonly {
           readonly id: string;
+          readonly body?: string;
           readonly tags: readonly string[];
           readonly linkedTaskIds: readonly string[];
         }[];
@@ -47,6 +52,7 @@ test('GET /api/notes', async (suite) => {
       assert.equal(payload.ok, true);
       assert.equal(payload.value.length, 1);
       assert.equal(payload.value[0]?.id, 'note-plan');
+      assert.equal(payload.value[0]?.body, undefined);
       assert.deepEqual(payload.value[0]?.tags, ['work']);
       assert.deepEqual(payload.value[0]?.linkedTaskIds, ['task-ship']);
     } finally {
@@ -102,14 +108,14 @@ test('GET /api/notes', async (suite) => {
       const response = await context.fetch('/api/notes?body=MILESTONES');
       const payload = (await response.json()) as {
         readonly ok: boolean;
-        readonly value: readonly { readonly id: string; readonly body: string }[];
+        readonly value: readonly { readonly id: string; readonly body?: string }[];
       };
 
       assert.equal(response.status, 200);
       assert.equal(payload.ok, true);
       assert.equal(payload.value.length, 1);
       assert.equal(payload.value[0]?.id, 'note-plan');
-      assert.equal(payload.value[0]?.body, 'Prepare milestones.');
+      assert.equal(payload.value[0]?.body, undefined);
     } finally {
       await context.reset();
     }
@@ -140,6 +146,13 @@ test('GET /api/notes', async (suite) => {
 
 /** Groups single-note lookup behavior by its public read endpoint. */
 test('GET /api/notes/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/notes/note-id', { authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('returns the selected fixture note', async () => {
     const context = getContext();
 
@@ -176,6 +189,13 @@ test('GET /api/notes/:id', async (suite) => {
 
 /** Groups note-create behavior by its public write endpoint. */
 test('POST /api/notes', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/notes', { method: 'POST', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test(
     'reuses existing labels and creates missing labels for note relationships',
     async () => {
@@ -255,6 +275,14 @@ test('POST /api/notes', async (suite) => {
 
 /** Groups note-replacement behavior by its public write endpoint. */
 test('PUT /api/notes/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/notes/note-id', { method: 'PUT', authenticated: false }))
+        .status,
+      401,
+    );
+  });
+
   await suite.test('updates an existing fixture note', async () => {
     const context = getContext();
 
@@ -312,6 +340,13 @@ test('PUT /api/notes/:id', async (suite) => {
 
 /** Groups note-delete behavior by its public command endpoint. */
 test('DELETE /api/notes', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/notes', { method: 'DELETE', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('removes selected fixture notes', async () => {
     const context = getContext();
 

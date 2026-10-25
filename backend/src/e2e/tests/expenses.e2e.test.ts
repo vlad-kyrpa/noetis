@@ -28,6 +28,11 @@ after(async (): Promise<void> => {
 
 /** Groups all list-endpoint behavior so successful and invalid requests remain easy to compare. */
 test('GET /api/expenses', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    const response = await getContext().fetch('/api/expenses', { authenticated: false });
+    assert.equal(response.status, 401);
+  });
+
   await suite.test('returns fixture records filtered by tag', async () => {
     const context = getContext();
 
@@ -202,6 +207,14 @@ test('GET /api/expenses', async (suite) => {
 
 /** Groups expense-create behavior by its public write endpoint. */
 test('POST /api/expenses', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    const response = await getContext().fetch('/api/expenses', {
+      method: 'POST',
+      authenticated: false,
+    });
+    assert.equal(response.status, 401);
+  });
+
   await suite.test('creates a missing tag before persisting a tagged expense', async () => {
     const context = getContext();
 
@@ -301,6 +314,14 @@ test('POST /api/expenses', async (suite) => {
 
 /** Groups expense-replacement behavior by its public write endpoint. */
 test('PUT /api/expenses/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    const response = await getContext().fetch('/api/expenses/expense-id', {
+      method: 'PUT',
+      authenticated: false,
+    });
+    assert.equal(response.status, 401);
+  });
+
   await suite.test('updates an existing fixture expense', async () => {
     const context = getContext();
 
@@ -354,6 +375,14 @@ test('PUT /api/expenses/:id', async (suite) => {
 
 /** Groups all delete-endpoint behavior so command validation is tested beside the success case. */
 test('DELETE /api/expenses', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    const response = await getContext().fetch('/api/expenses', {
+      method: 'DELETE',
+      authenticated: false,
+    });
+    assert.equal(response.status, 401);
+  });
+
   await suite.test('removes selected fixture records', async () => {
     const context = getContext();
 

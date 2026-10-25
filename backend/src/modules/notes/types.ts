@@ -10,6 +10,17 @@ export interface Note {
   readonly linkedNoteIds: readonly string[];
 }
 
+/** Represents a lightweight note returned by collection queries without its full content. */
+export interface NoteSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly tags: readonly string[];
+  readonly linkedTaskIds: readonly string[];
+  readonly linkedNoteIds: readonly string[];
+}
+
 /** Defines the write model required to create or replace a note. */
 export interface NoteInput {
   readonly title: string;
@@ -32,6 +43,6 @@ export interface NotesService {
   update(params: { readonly id: string; readonly input: NoteInput }): Promise<Result<Note>>;
   remove(ids: readonly string[]): Promise<void>;
   get(ids: readonly string[]): Promise<readonly Note[]>;
-  find(filters: NoteFilters): Promise<readonly Note[]>;
+  find(filters: NoteFilters): Promise<readonly NoteSummary[]>;
 }
 import type { Result } from '../common/utils/result';

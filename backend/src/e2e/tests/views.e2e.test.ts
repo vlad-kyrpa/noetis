@@ -25,6 +25,10 @@ after(async (): Promise<void> => {
 
 /** Groups saved-view list behavior by its public read endpoint. */
 test('GET /api/views', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal((await getContext().fetch('/api/views', { authenticated: false })).status, 401);
+  });
+
   await suite.test('returns views filtered by type', async () => {
     const context = getContext();
     try {
@@ -62,6 +66,13 @@ test('GET /api/views', async (suite) => {
 
 /** Groups single-view lookup behavior by its public read endpoint. */
 test('GET /api/views/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/views/view-id', { authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('returns the selected saved view', async () => {
     const context = getContext();
     try {
@@ -97,6 +108,13 @@ test('GET /api/views/:id', async (suite) => {
 
 /** Groups saved-view create behavior by its public write endpoint. */
 test('POST /api/views', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/views', { method: 'POST', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('reuses existing labels and creates missing labels', async () => {
     const context = getContext();
     try {
@@ -151,6 +169,14 @@ test('POST /api/views', async (suite) => {
 
 /** Groups saved-view replacement behavior by its public write endpoint. */
 test('PUT /api/views/:id', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/views/view-id', { method: 'PUT', authenticated: false }))
+        .status,
+      401,
+    );
+  });
+
   await suite.test('updates a saved view and replaces its tags', async () => {
     const context = getContext();
     try {
@@ -227,6 +253,13 @@ test('PUT /api/views/:id', async (suite) => {
 
 /** Groups saved-view delete behavior by its public command endpoint. */
 test('DELETE /api/views', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/views', { method: 'DELETE', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('removes selected views', async () => {
     const context = getContext();
     try {

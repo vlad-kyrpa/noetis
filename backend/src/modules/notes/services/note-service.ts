@@ -4,7 +4,7 @@ import type { Database } from '../../Database';
 import { collectionDiff } from '../../common/utils/collections';
 import { failure, success } from '../../common/utils/result';
 import { resolveTags } from '../../tags/services/resolve-tags';
-import type { Note, NoteFilters, NoteInput, NotesService } from '../types';
+import type { Note, NoteFilters, NoteInput, NoteSummary, NotesService } from '../types';
 
 /** Synchronizes note relations after converting public tag labels to internal IDs. */
 const replaceRelations = async (params: {
@@ -70,32 +70,49 @@ const replaceRelations = async (params: {
   ]);
 };
 
-/** Hydrates stored note content with its documented relation fields. */
-const hydrateNote = async (params: {
+/** Loads relations shared by complete notes and lightweight collection summaries. */
+const hydrateRelations = async (params: {
   readonly database: Database;
-  readonly note: typeof notes.$inferSelect;
-}): Promise<Note> => {
-  const { database, note } = params;
+  readonly noteId: string;
+}): Promise<Pick<NoteSummary, 'tags' | 'linkedTaskIds' | 'linkedNoteIds'>> => {
+  const { database, noteId } = params;
   const [tagRecords, linkedTasks, linkedNotes] = await Promise.all([
     database
       .select({ label: tags.label })
       .from(noteTags)
       .innerJoin(tags, eq(noteTags.tagId, tags.id))
-      .where(eq(noteTags.noteId, note.id)),
-    database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, note.id)),
+      .where(eq(noteTags.noteId, noteId)),
+    database.select({ id: noteTasks.taskId }).from(noteTasks).where(eq(noteTasks.noteId, noteId)),
     database
       .select({ id: noteLinks.linkedNoteId })
       .from(noteLinks)
-      .where(eq(noteLinks.noteId, note.id)),
+      .where(eq(noteLinks.noteId, noteId)),
   ]);
 
   return {
-    ...note,
     tags: tagRecords.map((item) => item.label),
     linkedTaskIds: linkedTasks.map((item) => item.id),
     linkedNoteIds: linkedNotes.map((item) => item.id),
   };
 };
+
+/** Hydrates stored note content with its documented relation fields. */
+const hydrateNote = async (params: {
+  readonly database: Database;
+  readonly note: typeof notes.$inferSelect;
+}): Promise<Note> => ({
+  ...params.note,
+  ...(await hydrateRelations({ database: params.database, noteId: params.note.id })),
+});
+
+/** Hydrates a selected note summary without loading its full body from storage. */
+const hydrateNoteSummary = async (params: {
+  readonly database: Database;
+  readonly note: Pick<typeof notes.$inferSelect, 'id' | 'title' | 'createdAt' | 'updatedAt'>;
+}): Promise<NoteSummary> => ({
+  ...params.note,
+  ...(await hydrateRelations({ database: params.database, noteId: params.note.id })),
+});
 
 /** Builds the documented Notes service on top of the D1 database abstraction. */
 export const noteServiceFactory = (database: Database): NotesService => ({
@@ -166,11 +183,16 @@ export const noteServiceFactory = (database: Database): NotesService => ({
     ].filter((condition) => condition !== undefined);
 
     const rows = await database
-      .select()
+      .select({
+        id: notes.id,
+        title: notes.title,
+        createdAt: notes.createdAt,
+        updatedAt: notes.updatedAt,
+      })
       .from(notes)
       .where(conditions.length === 0 ? undefined : and(...conditions))
       .orderBy(desc(notes.updatedAt));
 
-    return Promise.all(rows.map((note) => hydrateNote({ database, note })));
+    return Promise.all(rows.map((note) => hydrateNoteSummary({ database, note })));
   },
 });

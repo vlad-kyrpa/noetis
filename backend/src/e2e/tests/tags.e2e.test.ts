@@ -28,6 +28,10 @@ after(async (): Promise<void> => {
 
 /** Groups tag-list behavior by its public read endpoint. */
 test('GET /api/tags', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal((await getContext().fetch('/api/tags', { authenticated: false })).status, 401);
+  });
+
   await suite.test('returns fixture tags matching a case-insensitive label filter', async () => {
     const context = getContext();
 
@@ -71,6 +75,13 @@ test('GET /api/tags', async (suite) => {
 
 /** Groups tag-create behavior by its public write endpoint. */
 test('POST /api/tags', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tags', { method: 'POST', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('creates a trimmed label that can be found through the API', async () => {
     const context = getContext();
 
@@ -141,6 +152,13 @@ test('POST /api/tags', async (suite) => {
 
 /** Groups tag-delete behavior by its public command endpoint. */
 test('DELETE /api/tags', async (suite) => {
+  await suite.test('rejects requests without an access token', async () => {
+    assert.equal(
+      (await getContext().fetch('/api/tags', { method: 'DELETE', authenticated: false })).status,
+      401,
+    );
+  });
+
   await suite.test('removes selected fixture tags', async () => {
     const context = getContext();
 

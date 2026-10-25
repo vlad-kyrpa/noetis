@@ -13,11 +13,14 @@ import {
   taskLinks,
   taskNotes,
   tasks,
+  userRefreshTokens,
+  users,
   viewTags,
   views,
 } from '../database/schema';
 import type { Database } from '../modules/Database';
 import type { ApiBindings } from '../modules/api';
+import { createToken } from '../modules/auth/services/token-utils';
 
 /**
  * Builds an integration-test boundary around the real Worker.
@@ -39,6 +42,7 @@ export interface ApiTestRequest {
   readonly method?: string;
   readonly headers?: Readonly<Record<string, string>>;
   readonly body?: string;
+  readonly authenticated?: boolean;
 }
 
 /** Exposes an isolated local Worker and its D1 database to API integration tests. */
@@ -56,6 +60,7 @@ const backendRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const resetApiDatabase = async (database: Database): Promise<void> => {
   // Remove join rows before their referenced records to satisfy the database foreign keys.
   await Promise.all([
+    database.delete(userRefreshTokens),
     database.delete(noteTags),
     database.delete(noteTasks),
     database.delete(noteLinks),
@@ -69,6 +74,7 @@ const resetApiDatabase = async (database: Database): Promise<void> => {
     database.delete(tasks),
     database.delete(notes),
     database.delete(views),
+    database.delete(users),
   ]);
   await database.delete(tags);
 };
@@ -87,10 +93,21 @@ export const createApiTestContext = async (): Promise<ApiTestContext> => {
     await worker.applyD1Migrations('DB');
     const bindings = await worker.getEnv();
     const database = drizzle(bindings.DB, { schema });
+    const accessToken = await createToken({
+      secret: bindings.AUTH_TOKEN_SECRET,
+      userId: 'e2e-test-user',
+      sessionId: 'e2e-test-session',
+      kind: 'access',
+      expiresInMs: 60 * 60 * 1000,
+    });
 
     return {
       database,
-      fetch: (path, init): Promise<ApiTestResponse> => harness.fetch(path, init),
+      fetch: (path, init = {}): Promise<ApiTestResponse> => {
+        const { authenticated = true, headers, ...request } = init;
+        const authorization = authenticated ? { authorization: `Bearer ${accessToken}` } : {};
+        return harness.fetch(path, { ...request, headers: { ...authorization, ...headers } });
+      },
       // Reuse the expensive Worker process while restoring the database to its empty migrated state.
       reset: (): Promise<void> => resetApiDatabase(database),
       // Closing the harness disposes its temporary D1 storage after the test completes.

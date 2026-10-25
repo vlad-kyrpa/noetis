@@ -7,6 +7,39 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 
+/** Stores account credentials separately from the public user representation. */
+export const users = sqliteTable(
+  'users',
+  {
+    id: text('id').primaryKey(),
+    username: text('username').notNull(),
+    email: text('email').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    passwordSalt: text('password_salt').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('users_username_unique').on(table.username),
+    uniqueIndex('users_email_unique').on(table.email),
+  ],
+);
+
+/** Stores revocable sessions without exposing refresh tokens through user records. */
+export const userRefreshTokens = sqliteTable(
+  'user_refresh_tokens',
+  {
+    sessionId: text('session_id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    refreshToken: text('refresh_token').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [index('user_refresh_tokens_user_id_index').on(table.userId)],
+);
+
 /** Stores user-created labels shared by every feature. */
 export const tags = sqliteTable('tags', {
   id: text('id').primaryKey(),
@@ -149,6 +182,8 @@ export const expenses = sqliteTable(
 );
 /** Exposes the complete Drizzle schema to the D1 adapter. */
 export const schema = {
+  users,
+  userRefreshTokens,
   tags,
   views,
   viewTags,

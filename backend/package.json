@@ -11,8 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply --local",
-    "db:migrate:remote": "wrangler d1 migrations apply --remote",
+    "db:migrate:local": "wrangler d1 migrations apply noetis --local",
+    "db:migrate:remote": "wrangler d1 migrations apply noetis --remote",
     "build:client": "npm --prefix ../client run build",
     "deploy": "npm run build:client && wrangler deploy"
   },
