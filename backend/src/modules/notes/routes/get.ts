@@ -36,6 +36,6 @@ export const getNotesHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: GetNotesRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await noteServiceFactory(database).find(context.validatedReq.query)),
+      success(await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).find(context.validatedReq.query)),
     );
   });

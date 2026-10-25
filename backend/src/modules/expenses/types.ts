@@ -1,6 +1,7 @@
 /** Represents a signed income or expense record. */
 export interface ExpenseRecord {
   readonly id: string;
+  readonly userId: string;
   readonly amount: number;
   readonly tag: string | null;
   readonly description: string | null;

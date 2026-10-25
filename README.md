@@ -49,6 +49,8 @@ The Worker serves `client/dist` as its static assets and routes `/api/*` to the 
 
 Local D1 data is isolated from Cloudflare's remote database. The configuration and migrations live in `backend/wrangler.jsonc` and `backend/drizzle/`. The migration scripts explicitly target the configured `noetis` database, as required by current Wrangler versions.
 
+The ownership migration recreates tags, notes, tasks, expenses, views, and their relation tables to add required `user_id` values. It intentionally removes existing records in those tables; apply it only where that reset is acceptable.
+
 Configure a local signing secret before using authentication endpoints:
 
 ```powershell

@@ -44,7 +44,7 @@ export const createExpenseHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateExpenseRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await expenseServiceFactory(database).create(context.validatedReq.body)),
+      success(await expenseServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body)),
       201,
     );
   });

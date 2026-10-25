@@ -4,6 +4,7 @@ export type TaskStatus = 'undone' | 'inProgress' | 'done';
 /** Represents a fully hydrated task returned from the Tasks module. */
 export interface Task {
   readonly id: string;
+  readonly userId: string;
   readonly tagId: string | null;
   readonly title: string;
   readonly description: string | null;

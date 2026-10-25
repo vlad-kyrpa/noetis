@@ -47,7 +47,7 @@ export const createTaskHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await taskServiceFactory(database).create(context.validatedReq.body)),
+      success(await taskServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body)),
       201,
     );
   });

@@ -35,7 +35,7 @@ export const validateGetTask = validationMiddlewareFactory(getTaskSchema);
 export const getTaskHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: GetTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const task = (await taskServiceFactory(database).get([context.validatedReq.params.id]))[0];
+    const task = (await taskServiceFactory({ database, userId: context.get('authPrincipal').userId }).get([context.validatedReq.params.id]))[0];
     return task === undefined
       ? context.json(failure('Task not found'), 404)
       : context.json(success(task));

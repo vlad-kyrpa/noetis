@@ -50,6 +50,6 @@ export const getExpensesHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: GetExpensesRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await expenseServiceFactory(database).find(context.validatedReq.query)),
+      success(await expenseServiceFactory({ database, userId: context.get('authPrincipal').userId }).find(context.validatedReq.query)),
     );
   });

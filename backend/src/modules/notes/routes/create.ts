@@ -45,7 +45,7 @@ export const createNoteHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateNoteRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await noteServiceFactory(database).create(context.validatedReq.body)),
+      success(await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body)),
       201,
     );
   });

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { after, before, test } from 'node:test';
 import { createApiTestContext, type ApiTestContext } from '../api-test-context';
-import { createApiFixture, seedApiFixture } from '../fixtures';
+import { createApiFixture, seedApiFixture, seedOtherUser } from '../fixtures';
 
 /** Holds the one expensive Worker/D1 harness shared by this module's sequential API cases. */
 const testState: { context: ApiTestContext | null } = { context: null };
@@ -59,6 +59,16 @@ test('GET /api/expenses', async (suite) => {
     } finally {
       await context.reset();
     }
+  });
+
+  await suite.test('does not return another user\'s expense', async () => {
+    const context = getContext();
+    try {
+      await seedOtherUser(context.database);
+      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [], tasks: [], expenses: [{ id: 'other-expense', userId: 'e2e-other-user', amount: -1, tagId: null, description: null, createdAt: new Date(), updatedAt: new Date() }], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
+      const payload = (await (await context.fetch('/api/expenses')).json()) as { readonly value: readonly unknown[] };
+      assert.deepEqual(payload.value, []);
+    } finally { await context.reset(); }
   });
 
   await suite.test('rejects an invalid date filter', async () => {

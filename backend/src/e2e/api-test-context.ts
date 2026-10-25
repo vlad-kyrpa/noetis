@@ -55,6 +55,10 @@ export interface ApiTestContext {
 
 /** Anchors the Wrangler config lookup to the backend project regardless of the invoking directory. */
 const backendRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+/** Supplies the account represented by the default authenticated test request. */
+const e2eUser = {
+  id: 'e2e-test-user', username: 'e2e-user', email: 'e2e@example.test', passwordHash: 'unused', passwordSalt: 'unused', createdAt: new Date(), updatedAt: new Date(),
+};
 
 /** Clears all records in dependency order so the next test observes an empty migrated database. */
 const resetApiDatabase = async (database: Database): Promise<void> => {
@@ -77,6 +81,7 @@ const resetApiDatabase = async (database: Database): Promise<void> => {
     database.delete(users),
   ]);
   await database.delete(tags);
+  await database.insert(users).values(e2eUser);
 };
 
 /** Starts a fresh Worker, migrates its D1 binding, and returns request and seed-state access. */
@@ -93,6 +98,7 @@ export const createApiTestContext = async (): Promise<ApiTestContext> => {
     await worker.applyD1Migrations('DB');
     const bindings = await worker.getEnv();
     const database = drizzle(bindings.DB, { schema });
+    await resetApiDatabase(database);
     const accessToken = await createToken({
       secret: bindings.AUTH_TOKEN_SECRET,
       userId: 'e2e-test-user',

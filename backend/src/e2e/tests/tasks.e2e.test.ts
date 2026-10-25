@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { after, before, test } from 'node:test';
 import { createApiTestContext, type ApiTestContext } from '../api-test-context';
-import { createApiFixture, seedApiFixture } from '../fixtures';
+import { createApiFixture, seedApiFixture, seedOtherUser } from '../fixtures';
 
 /** Holds the Worker/D1 harness shared by this module's sequential API cases. */
 const testState: { context: ApiTestContext | null } = { context: null };
@@ -30,6 +30,16 @@ after(async (): Promise<void> => {
 test('GET /api/tasks', async (suite) => {
   await suite.test('rejects requests without an access token', async () => {
     assert.equal((await getContext().fetch('/api/tasks', { authenticated: false })).status, 401);
+  });
+
+  await suite.test('does not return another user\'s task', async () => {
+    const context = getContext();
+    try {
+      await seedOtherUser(context.database);
+      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [], tasks: [{ id: 'other-task', userId: 'e2e-other-user', title: 'Private', description: null, tagId: null, dueTo: null, status: 'undone', createdAt: new Date(), updatedAt: new Date() }], expenses: [], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
+      const payload = (await (await context.fetch('/api/tasks')).json()) as { readonly value: readonly unknown[] };
+      assert.deepEqual(payload.value, []);
+    } finally { await context.reset(); }
   });
 
   await suite.test('filters fixture tasks by title, status, and tag', async () => {

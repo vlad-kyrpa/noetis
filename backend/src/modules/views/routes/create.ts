@@ -34,6 +34,6 @@ import type { ViewInput } from '../types';
       const database = dependencies.databaseFactory(
         (context.env as { readonly DB: D1Database }).DB,
       );
-      const result = await viewServiceFactory(database).create(context.validatedReq.body);
+      const result = await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body);
       return result.ok ? context.json(result, 201) : context.json(result, 409);
     });

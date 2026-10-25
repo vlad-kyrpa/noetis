@@ -44,6 +44,6 @@ export const removeTasksHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: RemoveTasksRequestContext): Promise<Response> => {
     const body = context.validatedReq.body;
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    await taskServiceFactory(database).remove(body.ids);
+    await taskServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(body.ids);
     return context.json(success(body));
   });

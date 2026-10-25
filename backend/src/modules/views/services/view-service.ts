@@ -22,12 +22,13 @@ const hydrateView = async (params: {
 /** Replaces view tags after resolving public labels to existing or newly-created tag records. */
 const replaceTags = async (params: {
   readonly database: Database;
+  readonly userId: string;
   readonly viewId: string;
   readonly labels: readonly string[];
 }): Promise<void> => {
-  const { database, viewId, labels } = params;
+  const { database, userId, viewId, labels } = params;
   const [resolved, stored] = await Promise.all([
-    resolveTags({ database, labels }),
+    resolveTags({ database, userId, labels }),
     database.select({ id: viewTags.tagId }).from(viewTags).where(eq(viewTags.viewId, viewId)),
   ]);
   const changes = collectionDiff({
@@ -46,7 +47,9 @@ const replaceTags = async (params: {
   ]);
 };
 /** Builds the saved Views service on top of the D1 database abstraction. */
-export const viewServiceFactory = (database: Database): ViewsService => ({
+export const viewServiceFactory = (params: { readonly database: Database; readonly userId: string }): ViewsService => {
+  const { database, userId } = params;
+  return ({
   create: async (input) => {
     const id = crypto.randomUUID();
     const now = new Date();
@@ -54,6 +57,7 @@ export const viewServiceFactory = (database: Database): ViewsService => ({
       .insert(views)
       .values({
         id,
+        userId,
         type: input.type,
         period: input.period,
         title: input.title,
@@ -66,7 +70,7 @@ export const viewServiceFactory = (database: Database): ViewsService => ({
     if (view === undefined) {
       return failure('View title already exists for this type');
     }
-    await replaceTags({ database, viewId: id, labels: input.tags });
+    await replaceTags({ database, userId, viewId: id, labels: input.tags });
     return success(await hydrateView({ database, view }));
   },
   find: async (filters) =>
@@ -75,18 +79,18 @@ export const viewServiceFactory = (database: Database): ViewsService => ({
         await database
           .select()
           .from(views)
-          .where(filters.type === undefined ? undefined : eq(views.type, filters.type))
+          .where(and(eq(views.userId, userId), filters.type === undefined ? undefined : eq(views.type, filters.type)))
       ).map((view) => hydrateView({ database, view })),
     ),
   get: async (id) => {
-    const view = await database.select().from(views).where(eq(views.id, id)).get();
+    const view = await database.select().from(views).where(and(eq(views.id, id), eq(views.userId, userId))).get();
     return view === undefined ? null : hydrateView({ database, view });
   },
   update: async ({ id, input }) => {
     const current = await database
       .select({ id: views.id })
       .from(views)
-      .where(eq(views.id, id))
+      .where(and(eq(views.id, id), eq(views.userId, userId)))
       .get();
     if (current === undefined) {
       return failure('View not found');
@@ -94,7 +98,7 @@ export const viewServiceFactory = (database: Database): ViewsService => ({
     const duplicate = await database
       .select({ id: views.id })
       .from(views)
-      .where(and(eq(views.type, input.type), eq(views.title, input.title), ne(views.id, id)))
+      .where(and(eq(views.userId, userId), eq(views.type, input.type), eq(views.title, input.title), ne(views.id, id)))
       .get();
     if (duplicate !== undefined) {
       return failure('View title already exists for this type');
@@ -102,16 +106,17 @@ export const viewServiceFactory = (database: Database): ViewsService => ({
     const updated = await database
       .update(views)
       .set({ type: input.type, period: input.period, title: input.title, updatedAt: new Date() })
-      .where(eq(views.id, id))
+      .where(and(eq(views.id, id), eq(views.userId, userId)))
       .returning();
     const view = updated[0];
     if (view === undefined) {
       return failure('View not found');
     }
-    await replaceTags({ database, viewId: id, labels: input.tags });
+    await replaceTags({ database, userId, viewId: id, labels: input.tags });
     return success(await hydrateView({ database, view }));
   },
   remove: async (ids) => {
-    await database.delete(views).where(inArray(views.id, ids));
+    await database.delete(views).where(and(eq(views.userId, userId), inArray(views.id, ids)));
   },
-});
+  });
+};

@@ -44,6 +44,6 @@ export const removeExpensesHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: RemoveExpensesRequestContext): Promise<Response> => {
     const body = context.validatedReq.body;
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    await expenseServiceFactory(database).remove(body.ids);
+    await expenseServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(body.ids);
     return context.json(success(body));
   });

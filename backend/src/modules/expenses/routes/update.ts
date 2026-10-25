@@ -43,7 +43,7 @@ export const validateUpdateExpense = validationMiddlewareFactory(updateExpenseSc
 export const updateExpenseHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: UpdateExpenseRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const record = await expenseServiceFactory(database).update({
+    const record = await expenseServiceFactory({ database, userId: context.get('authPrincipal').userId }).update({
       id: context.validatedReq.params.id,
       input: context.validatedReq.body,
     });

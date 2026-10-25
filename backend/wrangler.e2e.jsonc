@@ -13,5 +13,6 @@
   ],
   "vars": {
     "AUTH_TOKEN_SECRET": "e2e-auth-token-secret",
+    "ALLOW_REGISTRATIONS": "true",
   },
 }

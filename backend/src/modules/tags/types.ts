@@ -1,6 +1,7 @@
 /** Represents a reusable label returned from the Tags module. */
 export interface Tag {
   readonly id: string;
+  readonly userId: string;
   readonly label: string;
   readonly createdAt: Date;
 }

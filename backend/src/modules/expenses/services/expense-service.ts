@@ -23,17 +23,20 @@ const hydrateExpense = async (params: {
 };
 
 /** Builds the documented Expenses service on top of the D1 database abstraction. */
-export const expenseServiceFactory = (database: Database): ExpensesService => ({
+export const expenseServiceFactory = (params: { readonly database: Database; readonly userId: string }): ExpensesService => {
+  const { database, userId } = params;
+  return ({
   create: async (input: ExpenseInput) => {
     const id = crypto.randomUUID();
     const now = new Date();
     const tag =
-      input.tag === null ? undefined : (await resolveTags({ database, labels: [input.tag] }))[0];
+      input.tag === null ? undefined : (await resolveTags({ database, userId, labels: [input.tag] }))[0];
     const tagId = tag?.id ?? null;
     const rows = await database
       .insert(expenses)
       .values({
         id,
+        userId,
         amount: input.amount,
         description: input.description,
         tagId,
@@ -52,19 +55,19 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
 
   update: async ({ id, input }) => {
     const tag =
-      input.tag === null ? undefined : (await resolveTags({ database, labels: [input.tag] }))[0];
+      input.tag === null ? undefined : (await resolveTags({ database, userId, labels: [input.tag] }))[0];
     const tagId = tag?.id ?? null;
     const rows = await database
       .update(expenses)
       .set({ amount: input.amount, description: input.description, tagId, updatedAt: new Date() })
-      .where(eq(expenses.id, id))
+      .where(and(eq(expenses.id, id), eq(expenses.userId, userId)))
       .returning();
     const record = rows[0];
     return record === undefined ? null : hydrateExpense({ database, expense: record });
   },
 
   remove: async (ids) => {
-    await database.delete(expenses).where(inArray(expenses.id, ids));
+    await database.delete(expenses).where(and(eq(expenses.userId, userId), inArray(expenses.id, ids)));
   },
 
   find: async (filters: ExpenseFilters) => {
@@ -74,9 +77,9 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
         : await database
             .select({ id: tags.id })
             .from(tags)
-            .where(eq(tags.label, filters.tag))
+            .where(and(eq(tags.userId, userId), eq(tags.label, filters.tag)))
             .get();
-    const conditions = [
+    const conditions = [eq(expenses.userId, userId),
       filters.tag === undefined
         ? undefined
         : tag === undefined
@@ -93,4 +96,5 @@ export const expenseServiceFactory = (database: Database): ExpensesService => ({
       .orderBy(desc(expenses.createdAt));
     return Promise.all(records.map((expense) => hydrateExpense({ database, expense })));
   },
-});
+  });
+};

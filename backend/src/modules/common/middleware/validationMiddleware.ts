@@ -1,4 +1,5 @@
 import type { Context, MiddlewareHandler } from 'hono';
+import type { ApiEnvironment } from '../../api';
 import { z } from 'zod';
 import { failure } from '../utils/result';
 
@@ -10,7 +11,7 @@ export interface ValidatedRequest<Body, Params, Query> {
 }
 
 /** Extends Hono's context with the validated contract for one endpoint. */
-export interface RequestContext<Body, Params, Query> extends Context {
+export interface RequestContext<Body, Params, Query> extends Context<ApiEnvironment> {
   validatedReq: ValidatedRequest<Body, Params, Query>;
 }
 
@@ -30,13 +31,15 @@ export type ValidatedRequestHandler<Body, Params, Query> = (
 export const validatedHandler =
   <Body, Params, Query>(
     handler: ValidatedRequestHandler<Body, Params, Query>,
-  ): ((context: Context) => Promise<Response>) =>
-  async (context: Context): Promise<Response> =>
+  ): ((context: Context<ApiEnvironment>) => Promise<Response>) =>
+  async (context: Context<ApiEnvironment>): Promise<Response> =>
     handler(context as RequestContext<Body, Params, Query>);
 
 /** Validates body, path params, and query once before exposing them to a typed handler. */
 export const validationMiddlewareFactory =
-  <Body, Params, Query>(schema: EndpointValidationSchema<Body, Params, Query>): MiddlewareHandler =>
+  <Body, Params, Query>(
+    schema: EndpointValidationSchema<Body, Params, Query>,
+  ): MiddlewareHandler<ApiEnvironment> =>
   async (context, next): Promise<Response | void> => {
     const rawBody: unknown = await context.req.json().catch(() => undefined);
 

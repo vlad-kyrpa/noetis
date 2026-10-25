@@ -30,7 +30,7 @@ import { viewServiceFactory } from '../services/view-service';
       const database = dependencies.databaseFactory(
         (context.env as { readonly DB: D1Database }).DB,
       );
-      const view = await viewServiceFactory(database).get(context.validatedReq.params.id);
+      const view = await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).get(context.validatedReq.params.id);
       return view === null
         ? context.json(failure('View not found'), 404)
         : context.json(success(view));

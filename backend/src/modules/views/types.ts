@@ -5,6 +5,7 @@ export type ViewTime = 'day' | 'week' | 'month' | 'year';
 /** Represents a saved, public view definition. */
 export interface View {
   readonly id: string;
+  readonly userId: string;
   readonly type: ViewType;
   readonly period: ViewTime;
   readonly title: string;

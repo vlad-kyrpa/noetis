@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { after, before, test } from 'node:test';
 import { createApiTestContext, type ApiTestContext } from '../api-test-context';
-import { createApiFixture, seedApiFixture } from '../fixtures';
+import { createApiFixture, seedApiFixture, seedOtherUser } from '../fixtures';
 
 /** Holds the one expensive Worker/D1 harness shared by this module's sequential API cases. */
 const testState: { context: ApiTestContext | null } = { context: null };
@@ -71,6 +71,16 @@ test('GET /api/tags', async (suite) => {
       await context.reset();
     }
   });
+
+  await suite.test('does not return another user\'s tag', async () => {
+    const context = getContext();
+    try {
+      await seedOtherUser(context.database);
+      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [{ id: 'other-tag', userId: 'e2e-other-user', label: 'private', createdAt: new Date() }], notes: [], tasks: [], expenses: [], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
+      const payload = (await (await context.fetch('/api/tags?label=private')).json()) as { readonly value: readonly unknown[] };
+      assert.deepEqual(payload.value, []);
+    } finally { await context.reset(); }
+  });
 });
 
 /** Groups tag-create behavior by its public write endpoint. */
@@ -112,6 +122,13 @@ test('POST /api/tags', async (suite) => {
     } finally {
       await context.reset();
     }
+  });
+
+  await suite.test('assigns the authenticated user as owner', async () => {
+    const response = await getContext().fetch('/api/tags', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ label: 'owned' }) });
+    const payload = (await response.json()) as { readonly value: { readonly userId: string } };
+    assert.equal(payload.value.userId, 'e2e-test-user');
+    await getContext().reset();
   });
 
   await suite.test('rejects a blank label', async () => {

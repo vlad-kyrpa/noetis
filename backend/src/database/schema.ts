@@ -43,21 +43,27 @@ export const userRefreshTokens = sqliteTable(
 /** Stores user-created labels shared by every feature. */
 export const tags = sqliteTable('tags', {
   id: text('id').primaryKey(),
-  label: text('label').notNull().unique(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  label: text('label').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-});
+}, (table) => [uniqueIndex('tags_user_label_unique').on(table.userId, table.label)]);
 /** Stores saved views over one supported record type. */
 export const views = sqliteTable(
   'views',
   {
     id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type', { enum: ['note', 'expense', 'task'] }).notNull(),
     period: text('period', { enum: ['day', 'week', 'month', 'year'] }).notNull(),
     title: text('title').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   },
-  (table) => [uniqueIndex('views_type_title_unique').on(table.type, table.title)],
+  (table) => [uniqueIndex('views_user_type_title_unique').on(table.userId, table.type, table.title)],
 );
 /** Associates saved views with their public tag labels through durable tag records. */
 export const viewTags = sqliteTable(
@@ -77,6 +83,9 @@ export const notes = sqliteTable(
   'notes',
   {
     id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     body: text('body').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
@@ -89,6 +98,9 @@ export const tasks = sqliteTable(
   'tasks',
   {
     id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     tagId: text('tag_id').references(() => tags.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     description: text('description'),
@@ -172,6 +184,9 @@ export const expenses = sqliteTable(
   'expenses',
   {
     id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     amount: integer('amount').notNull(),
     tagId: text('tag_id').references(() => tags.id, { onDelete: 'set null' }),
     description: text('description'),

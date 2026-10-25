@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { after, before, test } from 'node:test';
 import { users } from '../../database/schema';
+import { eq } from 'drizzle-orm';
 import { hashPassword } from '../../modules/auth/services/password-utils';
 import { createApiTestContext, type ApiTestContext } from '../api-test-context';
 
@@ -139,8 +140,12 @@ test('auth session lifecycle', async () => {
         id: 'user-auth',
         username: 'alex',
         email: 'alex@example.com',
-        createdAt: (await context.database.select().from(users).get())?.createdAt.toJSON(),
-        updatedAt: (await context.database.select().from(users).get())?.updatedAt.toJSON(),
+        createdAt: (
+          await context.database.select().from(users).where(eq(users.id, 'user-auth')).get()
+        )?.createdAt.toJSON(),
+        updatedAt: (
+          await context.database.select().from(users).where(eq(users.id, 'user-auth')).get()
+        )?.updatedAt.toJSON(),
       },
     });
     assert.equal(refreshResponse.status, 200);

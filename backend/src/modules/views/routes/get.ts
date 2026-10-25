@@ -33,6 +33,6 @@ import type { ViewFilters } from '../types';
         (context.env as { readonly DB: D1Database }).DB,
       );
       return context.json(
-        success(await viewServiceFactory(database).find(context.validatedReq.query)),
+        success(await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).find(context.validatedReq.query)),
       );
     });

@@ -1,6 +1,7 @@
 /** Represents a fully hydrated note returned from the Notes module. */
 export interface Note {
   readonly id: string;
+  readonly userId: string;
   readonly title: string;
   readonly body: string;
   readonly createdAt: Date;
@@ -13,6 +14,7 @@ export interface Note {
 /** Represents a lightweight note returned by collection queries without its full content. */
 export interface NoteSummary {
   readonly id: string;
+  readonly userId: string;
   readonly title: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { after, before, test } from 'node:test';
 import { createApiTestContext, type ApiTestContext } from '../api-test-context';
-import { createApiFixture, seedApiFixture } from '../fixtures';
+import { createApiFixture, seedApiFixture, seedOtherUser } from '../fixtures';
 
 /** Holds the one expensive Worker/D1 harness shared by this module's sequential API cases. */
 const testState: { context: ApiTestContext | null } = { context: null };
@@ -30,6 +30,16 @@ after(async (): Promise<void> => {
 test('GET /api/notes', async (suite) => {
   await suite.test('rejects requests without an access token', async () => {
     assert.equal((await getContext().fetch('/api/notes', { authenticated: false })).status, 401);
+  });
+
+  await suite.test('does not return another user\'s note', async () => {
+    const context = getContext();
+    try {
+      await seedOtherUser(context.database);
+      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [{ id: 'other-note', userId: 'e2e-other-user', title: 'Private', body: 'Private', createdAt: new Date(), updatedAt: new Date() }], tasks: [], expenses: [], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
+      const payload = (await (await context.fetch('/api/notes')).json()) as { readonly value: readonly unknown[] };
+      assert.deepEqual(payload.value, []);
+    } finally { await context.reset(); }
   });
 
   await suite.test('returns fixture records and their relationships', async () => {
@@ -178,6 +188,43 @@ test('GET /api/notes/:id', async (suite) => {
 
     try {
       const response = await context.fetch('/api/notes/note-missing');
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { ok: false, error: 'Note not found' });
+    } finally {
+      await context.reset();
+    }
+  });
+
+  await suite.test('returns not found for another user\'s note', async () => {
+    const context = getContext();
+
+    try {
+      await seedOtherUser(context.database);
+      await seedApiFixture({
+        database: context.database,
+        fixture: createApiFixture({
+          tags: [],
+          notes: [{
+            id: 'other-note',
+            userId: 'e2e-other-user',
+            title: 'Private note',
+            body: 'This is not visible to the test user.',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }],
+          tasks: [],
+          expenses: [],
+          views: [],
+          viewTags: [],
+          noteTags: [],
+          noteTasks: [],
+          taskLinks: [],
+          taskNotes: [],
+        }),
+      });
+
+      const response = await context.fetch('/api/notes/other-note');
 
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), { ok: false, error: 'Note not found' });
