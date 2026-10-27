@@ -1,7 +1,6 @@
 CREATE TABLE `views` (
 	`id` text PRIMARY KEY NOT NULL,
 	`type` text NOT NULL,
-	`period` text NOT NULL,
 	`title` text NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL

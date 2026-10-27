@@ -13,7 +13,11 @@ export const resolveTags = async (params: {
 
   return Promise.all(
     labels.map(async (label) => {
-      const existing = await database.select().from(tags).where(and(eq(tags.userId, userId), eq(tags.label, label))).get();
+      const existing = await database
+        .select()
+        .from(tags)
+        .where(and(eq(tags.userId, userId), eq(tags.label, label)))
+        .get();
       if (existing !== undefined) {
         return existing;
       }
@@ -22,7 +26,11 @@ export const resolveTags = async (params: {
         .insert(tags)
         .values({ id: crypto.randomUUID(), userId, label, createdAt: new Date() })
         .onConflictDoNothing();
-      const created = await database.select().from(tags).where(and(eq(tags.userId, userId), eq(tags.label, label))).get();
+      const created = await database
+        .select()
+        .from(tags)
+        .where(and(eq(tags.userId, userId), eq(tags.label, label)))
+        .get();
       if (created === undefined) {
         throw new Error('Created tag was not found');
       }

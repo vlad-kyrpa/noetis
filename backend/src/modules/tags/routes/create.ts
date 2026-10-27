@@ -33,7 +33,10 @@ export const validateCreateTag = validationMiddlewareFactory(createTagSchema);
 export const createTagHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateTagRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const tag = await tagServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body);
+    const tag = await tagServiceFactory({
+      database,
+      userId: context.get('authPrincipal').userId,
+    }).create(context.validatedReq.body);
     return tag === null
       ? context.json(failure('Tag label already exists'), 409)
       : context.json(success(tag), 201);

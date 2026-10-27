@@ -33,7 +33,7 @@ Run the Vite development server when working on the UI:
 npm --prefix client run dev
 ```
 
-Vite serves the client on its own development origin. There is currently no Vite API proxy, so `/api` calls are not forwarded automatically; use the Worker workflow below when exercising client-to-API integration.
+Vite serves the client on its own development origin and proxies `/api/*` requests to the local Worker at `http://127.0.0.1:8787`. Start the Worker workflow below alongside Vite when exercising client-to-API integration. In production the client uses relative `/api/*` URLs, so requests remain on the deployed Worker origin.
 
 ### Worker and local D1 development
 

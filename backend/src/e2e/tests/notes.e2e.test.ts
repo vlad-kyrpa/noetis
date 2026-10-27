@@ -32,14 +32,39 @@ test('GET /api/notes', async (suite) => {
     assert.equal((await getContext().fetch('/api/notes', { authenticated: false })).status, 401);
   });
 
-  await suite.test('does not return another user\'s note', async () => {
+  await suite.test("does not return another user's note", async () => {
     const context = getContext();
     try {
       await seedOtherUser(context.database);
-      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [{ id: 'other-note', userId: 'e2e-other-user', title: 'Private', body: 'Private', createdAt: new Date(), updatedAt: new Date() }], tasks: [], expenses: [], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
-      const payload = (await (await context.fetch('/api/notes')).json()) as { readonly value: readonly unknown[] };
+      await seedApiFixture({
+        database: context.database,
+        fixture: createApiFixture({
+          tags: [],
+          notes: [
+            {
+              id: 'other-note',
+              userId: 'e2e-other-user',
+              title: 'Private',
+              body: 'Private',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+          tasks: [],
+          expenses: [],
+          noteTags: [],
+          noteTasks: [],
+          taskLinks: [],
+          taskNotes: [],
+        }),
+      });
+      const payload = (await (await context.fetch('/api/notes')).json()) as {
+        readonly value: readonly unknown[];
+      };
       assert.deepEqual(payload.value, []);
-    } finally { await context.reset(); }
+    } finally {
+      await context.reset();
+    }
   });
 
   await suite.test('returns fixture records and their relationships', async () => {
@@ -196,7 +221,7 @@ test('GET /api/notes/:id', async (suite) => {
     }
   });
 
-  await suite.test('returns not found for another user\'s note', async () => {
+  await suite.test("returns not found for another user's note", async () => {
     const context = getContext();
 
     try {
@@ -205,14 +230,16 @@ test('GET /api/notes/:id', async (suite) => {
         database: context.database,
         fixture: createApiFixture({
           tags: [],
-          notes: [{
-            id: 'other-note',
-            userId: 'e2e-other-user',
-            title: 'Private note',
-            body: 'This is not visible to the test user.',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }],
+          notes: [
+            {
+              id: 'other-note',
+              userId: 'e2e-other-user',
+              title: 'Private note',
+              body: 'This is not visible to the test user.',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
           tasks: [],
           expenses: [],
           views: [],

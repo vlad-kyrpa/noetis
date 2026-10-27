@@ -29,14 +29,41 @@ test('GET /api/views', async (suite) => {
     assert.equal((await getContext().fetch('/api/views', { authenticated: false })).status, 401);
   });
 
-  await suite.test('does not return another user\'s view', async () => {
+  await suite.test("does not return another user's view", async () => {
     const context = getContext();
     try {
       await seedOtherUser(context.database);
-      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [], tasks: [], expenses: [], views: [{ id: 'other-view', userId: 'e2e-other-user', type: 'note', period: 'week', title: 'Private', createdAt: new Date(), updatedAt: new Date() }], viewTags: [], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
-      const payload = (await (await context.fetch('/api/views')).json()) as { readonly value: readonly unknown[] };
+      await seedApiFixture({
+        database: context.database,
+        fixture: createApiFixture({
+          tags: [],
+          notes: [],
+          tasks: [],
+          expenses: [],
+          views: [
+            {
+              id: 'other-view',
+              userId: 'e2e-other-user',
+              type: 'note',
+              title: 'Private',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+          viewTags: [],
+          noteTags: [],
+          noteTasks: [],
+          taskLinks: [],
+          taskNotes: [],
+        }),
+      });
+      const payload = (await (await context.fetch('/api/views')).json()) as {
+        readonly value: readonly unknown[];
+      };
       assert.deepEqual(payload.value, []);
-    } finally { await context.reset(); }
+    } finally {
+      await context.reset();
+    }
   });
 
   await suite.test('returns views filtered by type', async () => {
@@ -45,7 +72,7 @@ test('GET /api/views', async (suite) => {
       const create = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'note', period: 'week', title: 'Weekly work', tags: [] }),
+        body: JSON.stringify({ type: 'note', title: 'Weekly work', tags: [] }),
       });
       const created = (await create.json()) as { readonly value: { readonly id: string } };
       const response = await context.fetch('/api/views?type=note');
@@ -89,18 +116,17 @@ test('GET /api/views/:id', async (suite) => {
       const create = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'expense', period: 'month', title: 'Bills', tags: [] }),
+        body: JSON.stringify({ type: 'expense', title: 'Bills', tags: [] }),
       });
       const created = (await create.json()) as { readonly value: { readonly id: string } };
       const response = await context.fetch(`/api/views/${created.value.id}`);
       const payload = (await response.json()) as {
         readonly ok: boolean;
-        readonly value: { readonly title: string; readonly period: string };
+        readonly value: { readonly title: string };
       };
       assert.equal(response.status, 200);
       assert.equal(payload.ok, true);
       assert.equal(payload.value.title, 'Bills');
-      assert.equal(payload.value.period, 'month');
     } finally {
       await context.reset();
     }
@@ -134,7 +160,6 @@ test('POST /api/views', async (suite) => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           type: 'note',
-          period: 'week',
           title: 'Weekly work',
           tags: ['work', 'release'],
         }),
@@ -150,23 +175,23 @@ test('POST /api/views', async (suite) => {
       await context.reset();
     }
   });
-  await suite.test('rejects an invalid period and duplicate type-title pair', async () => {
+  await suite.test('rejects an invalid type and duplicate type-title pair', async () => {
     const context = getContext();
     try {
       const invalid = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'note', period: 'quarter', title: 'Quarterly', tags: [] }),
+        body: JSON.stringify({ type: 'invalid', title: 'Quarterly', tags: [] }),
       });
       const first = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'task', period: 'month', title: 'Progress', tags: [] }),
+        body: JSON.stringify({ type: 'task', title: 'Progress', tags: [] }),
       });
       const duplicate = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'task', period: 'day', title: 'Progress', tags: [] }),
+        body: JSON.stringify({ type: 'task', title: 'Progress', tags: [] }),
       });
       assert.equal(invalid.status, 400);
       assert.equal(first.status, 201);
@@ -195,7 +220,6 @@ test('PUT /api/views/:id', async (suite) => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           type: 'expense',
-          period: 'month',
           title: 'Bills',
           tags: ['finance'],
         }),
@@ -204,15 +228,14 @@ test('PUT /api/views/:id', async (suite) => {
       const response = await context.fetch(`/api/views/${created.value.id}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'expense', period: 'year', title: 'Bills', tags: ['work'] }),
+        body: JSON.stringify({ type: 'expense', title: 'Bills', tags: ['work'] }),
       });
       const payload = (await response.json()) as {
         readonly ok: boolean;
-        readonly value: { readonly period: string; readonly tags: readonly string[] };
+        readonly value: { readonly tags: readonly string[] };
       };
       assert.equal(response.status, 200);
       assert.equal(payload.ok, true);
-      assert.equal(payload.value.period, 'year');
       assert.deepEqual(payload.value.tags, ['work']);
     } finally {
       await context.reset();
@@ -226,18 +249,18 @@ test('PUT /api/views/:id', async (suite) => {
         const first = await context.fetch('/api/views', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ type: 'task', period: 'month', title: 'Progress', tags: [] }),
+          body: JSON.stringify({ type: 'task', title: 'Progress', tags: [] }),
         });
         const second = await context.fetch('/api/views', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ type: 'note', period: 'day', title: 'Progress', tags: [] }),
+          body: JSON.stringify({ type: 'note', title: 'Progress', tags: [] }),
         });
         const secondPayload = (await second.json()) as { readonly value: { readonly id: string } };
         const response = await context.fetch(`/api/views/${secondPayload.value.id}`, {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ type: 'task', period: 'day', title: 'Progress', tags: [] }),
+          body: JSON.stringify({ type: 'task', title: 'Progress', tags: [] }),
         });
         assert.equal(first.status, 201);
         assert.equal(response.status, 409);
@@ -252,7 +275,7 @@ test('PUT /api/views/:id', async (suite) => {
       const response = await context.fetch('/api/views/missing', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'note', period: 'day', title: 'Missing', tags: [] }),
+        body: JSON.stringify({ type: 'note', title: 'Missing', tags: [] }),
       });
       assert.equal(response.status, 404);
     } finally {
@@ -276,7 +299,7 @@ test('DELETE /api/views', async (suite) => {
       const create = await context.fetch('/api/views', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ type: 'task', period: 'day', title: 'Today', tags: [] }),
+        body: JSON.stringify({ type: 'task', title: 'Today', tags: [] }),
       });
       const created = (await create.json()) as { readonly value: { readonly id: string } };
       const response = await context.fetch('/api/views', {

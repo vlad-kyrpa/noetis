@@ -61,14 +61,40 @@ test('GET /api/expenses', async (suite) => {
     }
   });
 
-  await suite.test('does not return another user\'s expense', async () => {
+  await suite.test("does not return another user's expense", async () => {
     const context = getContext();
     try {
       await seedOtherUser(context.database);
-      await seedApiFixture({ database: context.database, fixture: createApiFixture({ tags: [], notes: [], tasks: [], expenses: [{ id: 'other-expense', userId: 'e2e-other-user', amount: -1, tagId: null, description: null, createdAt: new Date(), updatedAt: new Date() }], noteTags: [], noteTasks: [], taskLinks: [], taskNotes: [] }) });
-      const payload = (await (await context.fetch('/api/expenses')).json()) as { readonly value: readonly unknown[] };
+      await seedApiFixture({
+        database: context.database,
+        fixture: createApiFixture({
+          tags: [],
+          notes: [],
+          tasks: [],
+          expenses: [
+            {
+              id: 'other-expense',
+              userId: 'e2e-other-user',
+              amount: -1,
+              tagId: null,
+              description: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+          noteTags: [],
+          noteTasks: [],
+          taskLinks: [],
+          taskNotes: [],
+        }),
+      });
+      const payload = (await (await context.fetch('/api/expenses')).json()) as {
+        readonly value: readonly unknown[];
+      };
       assert.deepEqual(payload.value, []);
-    } finally { await context.reset(); }
+    } finally {
+      await context.reset();
+    }
   });
 
   await suite.test('rejects an invalid date filter', async () => {

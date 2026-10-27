@@ -1,13 +1,10 @@
 /** Limits a saved view to one record collection. */
 export type ViewType = 'note' | 'expense' | 'task';
-/** Limits a saved view to one supported time window. */
-export type ViewTime = 'day' | 'week' | 'month' | 'year';
 /** Represents a saved, public view definition. */
 export interface View {
   readonly id: string;
   readonly userId: string;
   readonly type: ViewType;
-  readonly period: ViewTime;
   readonly title: string;
   readonly tags: readonly string[];
   readonly createdAt: Date;
@@ -16,7 +13,6 @@ export interface View {
 /** Defines the write model for a saved view. */
 export interface ViewInput {
   readonly type: ViewType;
-  readonly period: ViewTime;
   readonly title: string;
   readonly tags: readonly string[];
 }

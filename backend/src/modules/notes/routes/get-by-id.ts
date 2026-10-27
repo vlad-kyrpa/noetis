@@ -35,7 +35,11 @@ export const validateGetNote = validationMiddlewareFactory(getNoteSchema);
 export const getNoteHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: GetNoteRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const note = (await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).get([context.validatedReq.params.id]))[0];
+    const note = (
+      await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).get([
+        context.validatedReq.params.id,
+      ])
+    )[0];
     return note === undefined
       ? context.json(failure('Note not found'), 404)
       : context.json(success(note));

@@ -20,7 +20,13 @@ const defaultOwnerId = 'e2e-test-user';
 export const seedOtherUser = async (database: Database): Promise<void> => {
   const now = new Date('2026-01-01T00:00:00.000Z');
   await database.insert(users).values({
-    id: 'e2e-other-user', username: 'e2e-other', email: 'other@example.test', passwordHash: 'unused', passwordSalt: 'unused', createdAt: now, updatedAt: now,
+    id: 'e2e-other-user',
+    username: 'e2e-other',
+    email: 'other@example.test',
+    passwordHash: 'unused',
+    passwordSalt: 'unused',
+    createdAt: now,
+    updatedAt: now,
   });
 };
 
@@ -59,7 +65,14 @@ export const createApiFixture = (overrides: ApiFixtureOverrides = {}): ApiFixtur
     // These identifiers are intentionally stable so test requests can refer to seeded records directly.
     tags: [{ id: 'tag-work', userId: 'e2e-test-user', label: 'work', createdAt }],
     notes: [
-      { id: 'note-plan', userId: 'e2e-test-user', title: 'Project plan', body: 'Prepare milestones.', createdAt, updatedAt },
+      {
+        id: 'note-plan',
+        userId: 'e2e-test-user',
+        title: 'Project plan',
+        body: 'Prepare milestones.',
+        createdAt,
+        updatedAt,
+      },
     ],
     tasks: [
       {
@@ -104,15 +117,44 @@ export const seedApiFixture = async (params: {
 
   // Insert independent records first; notes, tasks, and expenses can reference tags.
   await Promise.all([
-    fixture.tags.length === 0 ? Promise.resolve() : database.insert(tags).values(fixture.tags.map((tag) => ({ ...tag, userId: tag.userId ?? defaultOwnerId }))),
-    fixture.notes.length === 0 ? Promise.resolve() : database.insert(notes).values(fixture.notes.map((note) => ({ ...note, userId: note.userId ?? defaultOwnerId }))),
+    fixture.tags.length === 0
+      ? Promise.resolve()
+      : database
+          .insert(tags)
+          .values(fixture.tags.map((tag) => ({ ...tag, userId: tag.userId ?? defaultOwnerId }))),
+    fixture.notes.length === 0
+      ? Promise.resolve()
+      : database
+          .insert(notes)
+          .values(
+            fixture.notes.map((note) => ({ ...note, userId: note.userId ?? defaultOwnerId })),
+          ),
   ]);
   await Promise.all([
-    fixture.tasks.length === 0 ? Promise.resolve() : database.insert(tasks).values(fixture.tasks.map((task) => ({ ...task, userId: task.userId ?? defaultOwnerId }))),
+    fixture.tasks.length === 0
+      ? Promise.resolve()
+      : database
+          .insert(tasks)
+          .values(
+            fixture.tasks.map((task) => ({ ...task, userId: task.userId ?? defaultOwnerId })),
+          ),
     fixture.expenses.length === 0
       ? Promise.resolve()
-      : database.insert(expenses).values(fixture.expenses.map((expense) => ({ ...expense, userId: expense.userId ?? defaultOwnerId }))),
-    fixture.views.length === 0 ? Promise.resolve() : database.insert(views).values(fixture.views.map((view) => ({ ...view, userId: view.userId ?? defaultOwnerId }))),
+      : database
+          .insert(expenses)
+          .values(
+            fixture.expenses.map((expense) => ({
+              ...expense,
+              userId: expense.userId ?? defaultOwnerId,
+            })),
+          ),
+    fixture.views.length === 0
+      ? Promise.resolve()
+      : database
+          .insert(views)
+          .values(
+            fixture.views.map((view) => ({ ...view, userId: view.userId ?? defaultOwnerId })),
+          ),
   ]);
   // Insert relationship rows only after every referenced record exists.
   await Promise.all([

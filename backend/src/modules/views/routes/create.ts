@@ -17,7 +17,6 @@ import type { ViewInput } from '../types';
 /** Defines the saved-view write model accepted by Views endpoints. */ export const viewInputSchema: z.ZodType<ViewInput> =
   z.object({
     type: z.enum(['note', 'expense', 'task']),
-    period: z.enum(['day', 'week', 'month', 'year']),
     title: z.string().trim().min(1),
     tags: z.array(z.string().trim().min(1)).default([]),
   });
@@ -34,6 +33,9 @@ import type { ViewInput } from '../types';
       const database = dependencies.databaseFactory(
         (context.env as { readonly DB: D1Database }).DB,
       );
-      const result = await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body);
+      const result = await viewServiceFactory({
+        database,
+        userId: context.get('authPrincipal').userId,
+      }).create(context.validatedReq.body);
       return result.ok ? context.json(result, 201) : context.json(result, 409);
     });

@@ -44,6 +44,8 @@ export const removeNotesHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: RemoveNotesRequestContext): Promise<Response> => {
     const body = context.validatedReq.body;
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(body.ids);
+    await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(
+      body.ids,
+    );
     return context.json(success(body));
   });

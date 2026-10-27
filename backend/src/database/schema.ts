@@ -41,14 +41,18 @@ export const userRefreshTokens = sqliteTable(
 );
 
 /** Stores user-created labels shared by every feature. */
-export const tags = sqliteTable('tags', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  label: text('label').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-}, (table) => [uniqueIndex('tags_user_label_unique').on(table.userId, table.label)]);
+export const tags = sqliteTable(
+  'tags',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [uniqueIndex('tags_user_label_unique').on(table.userId, table.label)],
+);
 /** Stores saved views over one supported record type. */
 export const views = sqliteTable(
   'views',
@@ -58,12 +62,13 @@ export const views = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     type: text('type', { enum: ['note', 'expense', 'task'] }).notNull(),
-    period: text('period', { enum: ['day', 'week', 'month', 'year'] }).notNull(),
     title: text('title').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   },
-  (table) => [uniqueIndex('views_user_type_title_unique').on(table.userId, table.type, table.title)],
+  (table) => [
+    uniqueIndex('views_user_type_title_unique').on(table.userId, table.type, table.title),
+  ],
 );
 /** Associates saved views with their public tag labels through durable tag records. */
 export const viewTags = sqliteTable(
@@ -101,7 +106,6 @@ export const tasks = sqliteTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    tagId: text('tag_id').references(() => tags.id, { onDelete: 'set null' }),
     title: text('title').notNull(),
     description: text('description'),
     dueTo: text('due_to'),
@@ -113,6 +117,15 @@ export const tasks = sqliteTable(
     index('tasks_title_index').on(table.title),
     index('tasks_status_index').on(table.status),
   ],
+);
+/** Associates tasks with any number of reusable user tags. */
+export const taskTags = sqliteTable(
+  'task_tags',
+  {
+    taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.taskId, table.tagId] })],
 );
 /** Associates notes with labels without duplicating label text. */
 export const noteTags = sqliteTable(
@@ -188,12 +201,20 @@ export const expenses = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     amount: integer('amount').notNull(),
-    tagId: text('tag_id').references(() => tags.id, { onDelete: 'set null' }),
     description: text('description'),
     createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   },
   (table) => [index('expenses_created_at_index').on(table.createdAt)],
+);
+/** Associates expenses with any number of reusable user tags. */
+export const expenseTags = sqliteTable(
+  'expense_tags',
+  {
+    expenseId: text('expense_id').notNull().references(() => expenses.id, { onDelete: 'cascade' }),
+    tagId: text('tag_id').notNull().references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [primaryKey({ columns: [table.expenseId, table.tagId] })],
 );
 /** Exposes the complete Drizzle schema to the D1 adapter. */
 export const schema = {
@@ -204,10 +225,12 @@ export const schema = {
   viewTags,
   notes,
   tasks,
+  taskTags,
   noteTags,
   noteTasks,
   noteLinks,
   taskLinks,
   taskNotes,
   expenses,
+  expenseTags,
 };

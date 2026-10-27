@@ -28,17 +28,17 @@ CREATE TABLE `notes` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL RE
 --> statement-breakpoint
 CREATE INDEX `notes_title_index` ON `notes` (`title`);
 --> statement-breakpoint
-CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `tag_id` text REFERENCES `tags`(`id`) ON DELETE set null, `title` text NOT NULL, `description` text, `due_to` text, `status` text NOT NULL, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
+CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `title` text NOT NULL, `description` text, `due_to` text, `status` text NOT NULL, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
 --> statement-breakpoint
 CREATE INDEX `tasks_title_index` ON `tasks` (`title`);
 --> statement-breakpoint
 CREATE INDEX `tasks_status_index` ON `tasks` (`status`);
 --> statement-breakpoint
-CREATE TABLE `expenses` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `amount` integer NOT NULL, `tag_id` text REFERENCES `tags`(`id`) ON DELETE set null, `description` text, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
+CREATE TABLE `expenses` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `amount` integer NOT NULL, `description` text, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
 --> statement-breakpoint
 CREATE INDEX `expenses_created_at_index` ON `expenses` (`created_at`);
 --> statement-breakpoint
-CREATE TABLE `views` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `type` text NOT NULL, `period` text NOT NULL, `title` text NOT NULL, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
+CREATE TABLE `views` (`id` text PRIMARY KEY NOT NULL, `user_id` text NOT NULL REFERENCES `users`(`id`) ON DELETE cascade, `type` text NOT NULL, `title` text NOT NULL, `created_at` integer NOT NULL, `updated_at` integer NOT NULL);
 --> statement-breakpoint
 CREATE UNIQUE INDEX `views_user_type_title_unique` ON `views` (`user_id`,`type`,`title`);
 --> statement-breakpoint
@@ -51,5 +51,9 @@ CREATE TABLE `note_links` (`note_id` text NOT NULL REFERENCES `notes`(`id`) ON D
 CREATE TABLE `task_links` (`task_id` text NOT NULL REFERENCES `tasks`(`id`) ON DELETE cascade, `linked_task_id` text NOT NULL REFERENCES `tasks`(`id`) ON DELETE cascade, PRIMARY KEY(`task_id`,`linked_task_id`));
 --> statement-breakpoint
 CREATE TABLE `task_notes` (`task_id` text NOT NULL REFERENCES `tasks`(`id`) ON DELETE cascade, `note_id` text NOT NULL REFERENCES `notes`(`id`) ON DELETE cascade, PRIMARY KEY(`task_id`,`note_id`));
+--> statement-breakpoint
+CREATE TABLE `task_tags` (`task_id` text NOT NULL REFERENCES `tasks`(`id`) ON DELETE cascade, `tag_id` text NOT NULL REFERENCES `tags`(`id`) ON DELETE cascade, PRIMARY KEY(`task_id`,`tag_id`));
+--> statement-breakpoint
+CREATE TABLE `expense_tags` (`expense_id` text NOT NULL REFERENCES `expenses`(`id`) ON DELETE cascade, `tag_id` text NOT NULL REFERENCES `tags`(`id`) ON DELETE cascade, PRIMARY KEY(`expense_id`,`tag_id`));
 --> statement-breakpoint
 CREATE TABLE `view_tags` (`view_id` text NOT NULL REFERENCES `views`(`id`) ON DELETE cascade, `tag_id` text NOT NULL REFERENCES `tags`(`id`) ON DELETE cascade, PRIMARY KEY(`view_id`,`tag_id`));

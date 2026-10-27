@@ -44,6 +44,8 @@ export const removeTagsHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: RemoveTagsRequestContext): Promise<Response> => {
     const body = context.validatedReq.body;
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    await tagServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(body.ids);
+    await tagServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(
+      body.ids,
+    );
     return context.json(success(body));
   });

@@ -5,7 +5,7 @@ export type TaskStatus = 'undone' | 'inProgress' | 'done';
 export interface Task {
   readonly id: string;
   readonly userId: string;
-  readonly tagId: string | null;
+  readonly tags: readonly string[];
   readonly title: string;
   readonly description: string | null;
   readonly dueTo: string | null;
@@ -20,7 +20,7 @@ export interface Task {
 export interface TaskInput {
   readonly title: string;
   readonly description: string | null;
-  readonly tagId: string | null;
+  readonly tags: readonly string[];
   readonly dueTo: string | null;
   readonly status: TaskStatus;
   readonly linkedTaskIds: readonly string[];

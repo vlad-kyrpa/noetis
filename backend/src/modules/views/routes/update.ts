@@ -29,7 +29,10 @@ import { viewInputSchema } from './create';
       const database = dependencies.databaseFactory(
         (context.env as { readonly DB: D1Database }).DB,
       );
-      const result = await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).update({
+      const result = await viewServiceFactory({
+        database,
+        userId: context.get('authPrincipal').userId,
+      }).update({
         id: context.validatedReq.params.id,
         input: context.validatedReq.body,
       });

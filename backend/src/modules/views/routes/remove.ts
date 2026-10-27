@@ -31,6 +31,8 @@ import { viewServiceFactory } from '../services/view-service';
       const database = dependencies.databaseFactory(
         (context.env as { readonly DB: D1Database }).DB,
       );
-      await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(body.ids);
+      await viewServiceFactory({ database, userId: context.get('authPrincipal').userId }).remove(
+        body.ids,
+      );
       return context.json(success(body));
     });

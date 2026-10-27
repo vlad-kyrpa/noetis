@@ -21,7 +21,7 @@ export type CreateTaskRequestContext = RequestContext<TaskInput, CreateTaskParam
 export const taskInputSchema: z.ZodType<TaskInput> = z.object({
   title: z.string().trim().min(1),
   description: z.string().nullable(),
-  tagId: z.string().nullable(),
+  tags: z.array(z.string().trim().min(1)).default([]),
   dueTo: z.string().nullable(),
   status: z.enum(['undone', 'inProgress', 'done']),
   linkedTaskIds: z.array(z.string().min(1)).default([]),
@@ -47,7 +47,11 @@ export const createTaskHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: CreateTaskRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await taskServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(context.validatedReq.body)),
+      success(
+        await taskServiceFactory({ database, userId: context.get('authPrincipal').userId }).create(
+          context.validatedReq.body,
+        ),
+      ),
       201,
     );
   });

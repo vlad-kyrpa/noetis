@@ -47,76 +47,94 @@ const replaceTags = async (params: {
   ]);
 };
 /** Builds the saved Views service on top of the D1 database abstraction. */
-export const viewServiceFactory = (params: { readonly database: Database; readonly userId: string }): ViewsService => {
+export const viewServiceFactory = (params: {
+  readonly database: Database;
+  readonly userId: string;
+}): ViewsService => {
   const { database, userId } = params;
-  return ({
-  create: async (input) => {
-    const id = crypto.randomUUID();
-    const now = new Date();
-    const inserted = await database
-      .insert(views)
-      .values({
-        id,
-        userId,
-        type: input.type,
-        period: input.period,
-        title: input.title,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoNothing()
-      .returning();
-    const view = inserted[0];
-    if (view === undefined) {
-      return failure('View title already exists for this type');
-    }
-    await replaceTags({ database, userId, viewId: id, labels: input.tags });
-    return success(await hydrateView({ database, view }));
-  },
-  find: async (filters) =>
-    Promise.all(
-      (
-        await database
-          .select()
-          .from(views)
-          .where(and(eq(views.userId, userId), filters.type === undefined ? undefined : eq(views.type, filters.type)))
-      ).map((view) => hydrateView({ database, view })),
-    ),
-  get: async (id) => {
-    const view = await database.select().from(views).where(and(eq(views.id, id), eq(views.userId, userId))).get();
-    return view === undefined ? null : hydrateView({ database, view });
-  },
-  update: async ({ id, input }) => {
-    const current = await database
-      .select({ id: views.id })
-      .from(views)
-      .where(and(eq(views.id, id), eq(views.userId, userId)))
-      .get();
-    if (current === undefined) {
-      return failure('View not found');
-    }
-    const duplicate = await database
-      .select({ id: views.id })
-      .from(views)
-      .where(and(eq(views.userId, userId), eq(views.type, input.type), eq(views.title, input.title), ne(views.id, id)))
-      .get();
-    if (duplicate !== undefined) {
-      return failure('View title already exists for this type');
-    }
-    const updated = await database
-      .update(views)
-      .set({ type: input.type, period: input.period, title: input.title, updatedAt: new Date() })
-      .where(and(eq(views.id, id), eq(views.userId, userId)))
-      .returning();
-    const view = updated[0];
-    if (view === undefined) {
-      return failure('View not found');
-    }
-    await replaceTags({ database, userId, viewId: id, labels: input.tags });
-    return success(await hydrateView({ database, view }));
-  },
-  remove: async (ids) => {
-    await database.delete(views).where(and(eq(views.userId, userId), inArray(views.id, ids)));
-  },
-  });
+  return {
+    create: async (input) => {
+      const id = crypto.randomUUID();
+      const now = new Date();
+      const inserted = await database
+        .insert(views)
+        .values({
+          id,
+          userId,
+          type: input.type,
+          title: input.title,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoNothing()
+        .returning();
+      const view = inserted[0];
+      if (view === undefined) {
+        return failure('View title already exists for this type');
+      }
+      await replaceTags({ database, userId, viewId: id, labels: input.tags });
+      return success(await hydrateView({ database, view }));
+    },
+    find: async (filters) =>
+      Promise.all(
+        (
+          await database
+            .select()
+            .from(views)
+            .where(
+              and(
+                eq(views.userId, userId),
+                filters.type === undefined ? undefined : eq(views.type, filters.type),
+              ),
+            )
+        ).map((view) => hydrateView({ database, view })),
+      ),
+    get: async (id) => {
+      const view = await database
+        .select()
+        .from(views)
+        .where(and(eq(views.id, id), eq(views.userId, userId)))
+        .get();
+      return view === undefined ? null : hydrateView({ database, view });
+    },
+    update: async ({ id, input }) => {
+      const current = await database
+        .select({ id: views.id })
+        .from(views)
+        .where(and(eq(views.id, id), eq(views.userId, userId)))
+        .get();
+      if (current === undefined) {
+        return failure('View not found');
+      }
+      const duplicate = await database
+        .select({ id: views.id })
+        .from(views)
+        .where(
+          and(
+            eq(views.userId, userId),
+            eq(views.type, input.type),
+            eq(views.title, input.title),
+            ne(views.id, id),
+          ),
+        )
+        .get();
+      if (duplicate !== undefined) {
+        return failure('View title already exists for this type');
+      }
+      const updated = await database
+        .update(views)
+        .set({ type: input.type, title: input.title, updatedAt: new Date() })
+        .where(and(eq(views.id, id), eq(views.userId, userId)))
+        .returning();
+      const view = updated[0];
+      if (view === undefined) {
+        return failure('View not found');
+      }
+      await replaceTags({ database, userId, viewId: id, labels: input.tags });
+      return success(await hydrateView({ database, view }));
+    },
+    remove: async (ids) => {
+      await database.delete(views).where(and(eq(views.userId, userId), inArray(views.id, ids)));
+    },
+  };
 };

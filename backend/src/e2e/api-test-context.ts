@@ -57,7 +57,13 @@ export interface ApiTestContext {
 const backendRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 /** Supplies the account represented by the default authenticated test request. */
 const e2eUser = {
-  id: 'e2e-test-user', username: 'e2e-user', email: 'e2e@example.test', passwordHash: 'unused', passwordSalt: 'unused', createdAt: new Date(), updatedAt: new Date(),
+  id: 'e2e-test-user',
+  username: 'e2e-user',
+  email: 'e2e@example.test',
+  passwordHash: 'unused',
+  passwordSalt: 'unused',
+  createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 /** Clears all records in dependency order so the next test observes an empty migrated database. */

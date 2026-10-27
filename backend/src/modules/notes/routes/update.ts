@@ -39,7 +39,10 @@ export const validateUpdateNote = validationMiddlewareFactory(updateNoteSchema);
 export const updateNoteHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: UpdateNoteRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
-    const result = await noteServiceFactory({ database, userId: context.get('authPrincipal').userId }).update({
+    const result = await noteServiceFactory({
+      database,
+      userId: context.get('authPrincipal').userId,
+    }).update({
       id: context.validatedReq.params.id,
       input: context.validatedReq.body,
     });

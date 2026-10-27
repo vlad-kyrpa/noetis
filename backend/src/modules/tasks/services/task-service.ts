@@ -21,8 +21,18 @@ const replaceRelations = async (params: {
     database.select({ id: taskNotes.noteId }).from(taskNotes).where(eq(taskNotes.taskId, taskId)),
   ]);
   const [ownedTasks, ownedNotes] = await Promise.all([
-    input.linkedTaskIds.length === 0 ? Promise.resolve([]) : database.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.userId, userId), inArray(tasks.id, input.linkedTaskIds))),
-    input.linkedNoteIds.length === 0 ? Promise.resolve([]) : database.select({ id: notes.id }).from(notes).where(and(eq(notes.userId, userId), inArray(notes.id, input.linkedNoteIds))),
+    input.linkedTaskIds.length === 0
+      ? Promise.resolve([])
+      : database
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(and(eq(tasks.userId, userId), inArray(tasks.id, input.linkedTaskIds))),
+    input.linkedNoteIds.length === 0
+      ? Promise.resolve([])
+      : database
+          .select({ id: notes.id })
+          .from(notes)
+          .where(and(eq(notes.userId, userId), inArray(notes.id, input.linkedNoteIds))),
   ]);
   const taskChanges = collectionDiff({
     current: storedTasks.map((task) => task.id),
@@ -84,108 +94,139 @@ const ownedTagId = async (params: {
 }): Promise<string | null> => {
   const { database, userId, tagId } = params;
   if (tagId === null) return null;
-  const tag = await database.select({ id: tags.id }).from(tags).where(and(eq(tags.id, tagId), eq(tags.userId, userId))).get();
+  const tag = await database
+    .select({ id: tags.id })
+    .from(tags)
+    .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
+    .get();
   return tag?.id ?? null;
 };
 
 /** Builds the documented Tasks service on top of the D1 database abstraction. */
-export const taskServiceFactory = (params: { readonly database: Database; readonly userId: string }): TasksService => {
+export const taskServiceFactory = (params: {
+  readonly database: Database;
+  readonly userId: string;
+}): TasksService => {
   const { database, userId } = params;
-  return ({
-  create: async (input) => {
-    const id = crypto.randomUUID();
-    const now = new Date();
-    const tagId = await ownedTagId({ database, userId, tagId: input.tagId });
-    await database.insert(tasks).values({
-      id,
-      userId,
-      title: input.title,
-      description: input.description,
-      tagId,
-      dueTo: input.dueTo,
-      status: input.status,
-      createdAt: now,
-      updatedAt: now,
-    });
-    await replaceRelations({ database, userId, taskId: id, input });
-    const task = await database.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId))).get();
-    if (task === undefined) throw new Error('Created task was not found');
-    return hydrateTask({ database, task });
-  },
-  update: async ({ id, input }) => {
-    const tagId = await ownedTagId({ database, userId, tagId: input.tagId });
-    const updated = await database
-      .update(tasks)
-      .set({
+  return {
+    create: async (input) => {
+      const id = crypto.randomUUID();
+      const now = new Date();
+      const tagId = await ownedTagId({ database, userId, tagId: input.tagId });
+      await database.insert(tasks).values({
+        id,
+        userId,
         title: input.title,
         description: input.description,
         tagId,
         dueTo: input.dueTo,
         status: input.status,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
-      .returning();
-    const task = updated[0];
-    if (task === undefined) {
-      return failure('Task not found');
-    }
-    await replaceRelations({ database, userId, taskId: id, input });
-    return success(await hydrateTask({ database, task }));
-  },
-  remove: async (ids) => {
-    await database.delete(tasks).where(and(eq(tasks.userId, userId), inArray(tasks.id, ids)));
-  },
-  get: async (ids) =>
-    Promise.all(
-      (await database.select().from(tasks).where(and(eq(tasks.userId, userId), inArray(tasks.id, ids)))).map((task) =>
-        hydrateTask({ database, task }),
+        createdAt: now,
+        updatedAt: now,
+      });
+      await replaceRelations({ database, userId, taskId: id, input });
+      const task = await database
+        .select()
+        .from(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+        .get();
+      if (task === undefined) throw new Error('Created task was not found');
+      return hydrateTask({ database, task });
+    },
+    update: async ({ id, input }) => {
+      const tagId = await ownedTagId({ database, userId, tagId: input.tagId });
+      const updated = await database
+        .update(tasks)
+        .set({
+          title: input.title,
+          description: input.description,
+          tagId,
+          dueTo: input.dueTo,
+          status: input.status,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+        .returning();
+      const task = updated[0];
+      if (task === undefined) {
+        return failure('Task not found');
+      }
+      await replaceRelations({ database, userId, taskId: id, input });
+      return success(await hydrateTask({ database, task }));
+    },
+    remove: async (ids) => {
+      await database.delete(tasks).where(and(eq(tasks.userId, userId), inArray(tasks.id, ids)));
+    },
+    get: async (ids) =>
+      Promise.all(
+        (
+          await database
+            .select()
+            .from(tasks)
+            .where(and(eq(tasks.userId, userId), inArray(tasks.id, ids)))
+        ).map((task) => hydrateTask({ database, task })),
       ),
-    ),
-  find: async (filters: TaskFilters) => {
-    const conditions = [eq(tasks.userId, userId),
-      filters.tagId === undefined ? undefined : eq(tasks.tagId, filters.tagId),
-      filters.title === undefined
-        ? undefined
-        : like(sql`lower(${tasks.title})`, `%${filters.title.toLowerCase()}%`),
-      filters.status === undefined ? undefined : eq(tasks.status, filters.status),
-      filters.dueTo === 'defined'
-        ? isNotNull(tasks.dueTo)
-        : filters.dueTo === undefined
+    find: async (filters: TaskFilters) => {
+      const conditions = [
+        eq(tasks.userId, userId),
+        filters.tagId === undefined ? undefined : eq(tasks.tagId, filters.tagId),
+        filters.title === undefined
           ? undefined
-          : eq(tasks.dueTo, filters.dueTo),
-    ].filter((condition) => condition !== undefined);
-    const rows = await database
-      .select()
-      .from(tasks)
-      .where(conditions.length === 0 ? undefined : and(...conditions))
-      .orderBy(desc(tasks.updatedAt));
-    return Promise.all(rows.map((task) => hydrateTask({ database, task })));
-  },
-  findNoteByTitleAndLink: async ({ taskId, title }) => {
-    const [source, note] = await Promise.all([
-      database.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId))).get(),
-      database.select({ id: notes.id }).from(notes).where(and(eq(notes.title, title), eq(notes.userId, userId))).get(),
-    ]);
-    if (source === undefined || note === undefined) {
-      return failure('Task or note not found');
-    }
-    await database.insert(taskNotes).values({ taskId, noteId: note.id }).onConflictDoNothing();
-    return success(note.id);
-  },
-  findTaskByTitleAndLink: async ({ taskId, title }) => {
-    const [source, task] = await Promise.all([
-      database.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.id, taskId), eq(tasks.userId, userId))).get(),
-      database.select({ id: tasks.id }).from(tasks).where(and(eq(tasks.title, title), eq(tasks.userId, userId))).get(),
-    ]);
-    if (source === undefined || task === undefined || task.id === taskId) {
-      return failure('Task not found or self-link requested');
-    }
-    await database
-      .insert(taskLinks)
-      .values({ taskId, linkedTaskId: task.id })
-      .onConflictDoNothing();
-    return success(task.id);
-  },
-  });
+          : like(sql`lower(${tasks.title})`, `%${filters.title.toLowerCase()}%`),
+        filters.status === undefined ? undefined : eq(tasks.status, filters.status),
+        filters.dueTo === 'defined'
+          ? isNotNull(tasks.dueTo)
+          : filters.dueTo === undefined
+            ? undefined
+            : eq(tasks.dueTo, filters.dueTo),
+      ].filter((condition) => condition !== undefined);
+      const rows = await database
+        .select()
+        .from(tasks)
+        .where(conditions.length === 0 ? undefined : and(...conditions))
+        .orderBy(desc(tasks.updatedAt));
+      return Promise.all(rows.map((task) => hydrateTask({ database, task })));
+    },
+    findNoteByTitleAndLink: async ({ taskId, title }) => {
+      const [source, note] = await Promise.all([
+        database
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+          .get(),
+        database
+          .select({ id: notes.id })
+          .from(notes)
+          .where(and(eq(notes.title, title), eq(notes.userId, userId)))
+          .get(),
+      ]);
+      if (source === undefined || note === undefined) {
+        return failure('Task or note not found');
+      }
+      await database.insert(taskNotes).values({ taskId, noteId: note.id }).onConflictDoNothing();
+      return success(note.id);
+    },
+    findTaskByTitleAndLink: async ({ taskId, title }) => {
+      const [source, task] = await Promise.all([
+        database
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(and(eq(tasks.id, taskId), eq(tasks.userId, userId)))
+          .get(),
+        database
+          .select({ id: tasks.id })
+          .from(tasks)
+          .where(and(eq(tasks.title, title), eq(tasks.userId, userId)))
+          .get(),
+      ]);
+      if (source === undefined || task === undefined || task.id === taskId) {
+        return failure('Task not found or self-link requested');
+      }
+      await database
+        .insert(taskLinks)
+        .values({ taskId, linkedTaskId: task.id })
+        .onConflictDoNothing();
+      return success(task.id);
+    },
+  };
 };

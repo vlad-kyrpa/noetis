@@ -36,6 +36,10 @@ export const getTagsHandler = (dependencies: RouteHandlerDependencies) =>
   validatedHandler(async (context: GetTagsRequestContext): Promise<Response> => {
     const database = dependencies.databaseFactory((context.env as { readonly DB: D1Database }).DB);
     return context.json(
-      success(await tagServiceFactory({ database, userId: context.get('authPrincipal').userId }).find(context.validatedReq.query.label ?? null)),
+      success(
+        await tagServiceFactory({ database, userId: context.get('authPrincipal').userId }).find(
+          context.validatedReq.query.label ?? null,
+        ),
+      ),
     );
   });
