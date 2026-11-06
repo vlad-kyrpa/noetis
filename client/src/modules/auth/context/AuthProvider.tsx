@@ -8,7 +8,6 @@ import { toAuthFormFailure } from '../api/form-failure';
 import { SessionEvent } from '../session/types';
 import type { AuthenticatedUser } from '../types';
 import { AuthContext } from './auth-context';
-import { fetchCurrentUser } from './current-user';
 import { AuthStatus } from './types';
 import type { AuthContextValue, AuthProviderProps } from './types';
 
@@ -17,7 +16,12 @@ const ignoreSessionEvent = (): void => undefined;
 
 // Adapts the auth session to React: holds the current user and status, and exposes the
 // session's actions and token factories to the component tree.
-export function AuthProvider({ authApi, children, session }: AuthProviderProps): ReactElement {
+export function AuthProvider({
+  authApi,
+  authClient,
+  children,
+  session,
+}: AuthProviderProps): ReactElement {
   const [status, setStatus] = useState<AuthStatus>(() =>
     session.hasSession() ? AuthStatus.Checking : AuthStatus.Unauthenticated,
   );
@@ -46,7 +50,7 @@ export function AuthProvider({ authApi, children, session }: AuthProviderProps):
     }
 
     const mounted = { current: true };
-    void fetchCurrentUser({ authApi, session }).then((result) => {
+    void authClient.me().then((result) => {
       if (mounted.current) {
         applyUserResult(result);
       }
@@ -55,7 +59,7 @@ export function AuthProvider({ authApi, children, session }: AuthProviderProps):
     return () => {
       mounted.current = false;
     };
-  }, [applyUserResult, authApi, session]);
+  }, [applyUserResult, authClient, session]);
 
   // Signs the UI out whenever the session ends, including a failed refresh mid-request.
   useEffect(() => {
@@ -81,12 +85,12 @@ export function AuthProvider({ authApi, children, session }: AuthProviderProps):
         return signedIn;
       }
 
-      const result = await fetchCurrentUser({ authApi, session });
+      const result = await authClient.me();
       applyUserResult(result);
 
       return result.ok ? result : fail(toAuthFormFailure(result.error));
     },
-    [applyUserResult, authApi, session],
+    [applyUserResult, authClient, session],
   );
 
   const register = useCallback<AuthContextValue['register']>(
@@ -100,15 +104,13 @@ export function AuthProvider({ authApi, children, session }: AuthProviderProps):
 
   const retry = useCallback<AuthContextValue['retry']>(async () => {
     setStatus(AuthStatus.Checking);
-    applyUserResult(await fetchCurrentUser({ authApi, session }));
-  }, [applyUserResult, authApi, session]);
+    applyUserResult(await authClient.me());
+  }, [applyUserResult, authClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      accessTokenFactory: session.accessTokenFactory,
       login,
       logout: session.logout,
-      refreshTokenFactory: session.refreshTokenFactory,
       register,
       retry,
       status,

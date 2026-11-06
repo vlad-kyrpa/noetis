@@ -1,7 +1,6 @@
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
-import { authApi, authSession } from './app/composition';
-import { HttpMethodsProvider } from './common/api/HttpMethodsProvider';
-import { http } from './common/api/http';
+import { authApi, authClient, authSession, backendClientFactory } from './app/composition';
+import { BackendClientProvider } from './common/backend-client/BackendClientProvider';
 import { Layout } from './common/components/Layout/Layout';
 import { HomePage } from './common/pages/HomePage';
 import { MenuPage } from './common/pages/MenuPage';
@@ -16,8 +15,8 @@ import { routes } from './routes';
 function App() {
   return (
     <div className="client">
-      <HttpMethodsProvider methods={http}>
-        <AuthProvider authApi={authApi} session={authSession}>
+      <AuthProvider authApi={authApi} authClient={authClient} session={authSession}>
+        <BackendClientProvider factory={backendClientFactory}>
           <BrowserRouter>
             <Routes>
               <Route
@@ -41,8 +40,8 @@ function App() {
               </Route>
             </Routes>
           </BrowserRouter>
-        </AuthProvider>
-      </HttpMethodsProvider>
+        </BackendClientProvider>
+      </AuthProvider>
     </div>
   );
 }

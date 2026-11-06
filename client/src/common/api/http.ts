@@ -2,6 +2,7 @@ import type {
   HttpBodyRequestParams,
   HttpBodyRequestResult,
   HttpDeleteParams,
+  HttpDeleteResult,
   HttpGetParams,
   HttpPostParams,
   HttpPostResult,
@@ -26,7 +27,7 @@ interface SendRequestParams {
 }
 
 interface SendJsonRequestParams<BodyType> extends HttpBodyRequestParams<BodyType> {
-  method: HttpMethod.Post | HttpMethod.Put;
+  method: HttpMethod.Delete | HttpMethod.Post | HttpMethod.Put;
 }
 
 // Adds defined query values to a path while preserving an existing query string.
@@ -113,8 +114,15 @@ const post = async <BodyType>(params: HttpPostParams<BodyType>): Promise<HttpPos
 const put = async <BodyType>(params: HttpPutParams<BodyType>): Promise<HttpPutResult> =>
   sendJsonRequest({ ...params, method: HttpMethod.Put });
 
-// Sends a DELETE request with optional query values and headers.
-const remove = async ({ headers, path, query }: HttpDeleteParams): Promise<HttpResponseResult> =>
-  sendRequest({ headers, method: HttpMethod.Delete, path, query });
+// Sends a DELETE request, validating and JSON-encoding the body only when one is supplied.
+const remove = async <BodyType>(params: HttpDeleteParams<BodyType>): Promise<HttpDeleteResult> =>
+  'body' in params
+    ? sendJsonRequest({ ...params, method: HttpMethod.Delete })
+    : sendRequest({
+        headers: params.headers,
+        method: HttpMethod.Delete,
+        path: params.path,
+        query: params.query,
+      });
 
 export const http = { delete: remove, get, post, put };

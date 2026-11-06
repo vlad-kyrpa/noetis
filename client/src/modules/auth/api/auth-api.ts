@@ -9,7 +9,6 @@ import { validateLoginInput, validateRefreshInput, validateRegisterInput } from 
 const AUTH_PATHS = {
   login: '/auth/login',
   logout: '/auth/logout',
-  me: '/auth/me',
   refresh: '/auth/token',
   register: '/users',
 } as const;
@@ -43,15 +42,6 @@ export const createAuthApi = ({ baseUrl, methods }: AuthApiDependencies): AuthAp
             body: input,
             path: toPath(AUTH_PATHS.logout),
             validator: validateRefreshInput,
-          }),
-      }),
-    me: (accessToken) =>
-      sendApiRequest({
-        decode: decodeAuthenticatedUser,
-        send: () =>
-          methods.get({
-            headers: { Authorization: `Bearer ${accessToken}` },
-            path: toPath(AUTH_PATHS.me),
           }),
       }),
     refresh: (input) =>

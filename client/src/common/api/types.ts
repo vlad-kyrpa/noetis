@@ -23,7 +23,9 @@ export type HttpPutParams<BodyType> = HttpBodyRequestParams<BodyType>;
 
 export type HttpGetParams = HttpRequestParams;
 
-export type HttpDeleteParams = HttpRequestParams;
+// A DELETE may carry a validated JSON body (e.g. a list of ids) or no body at all.
+export type HttpDeleteParams<BodyType = never> =
+  HttpRequestParams | HttpBodyRequestParams<BodyType>;
 
 // Why a request never produced an HTTP response.
 export enum HttpNotSentReason {
@@ -57,8 +59,10 @@ export type HttpPostResult = HttpBodyRequestResult;
 
 export type HttpPutResult = HttpBodyRequestResult;
 
+export type HttpDeleteResult = HttpBodyRequestResult;
+
 export interface HttpMethods {
-  delete: (params: HttpDeleteParams) => Promise<HttpResponseResult>;
+  delete: <BodyType = never>(params: HttpDeleteParams<BodyType>) => Promise<HttpDeleteResult>;
   get: (params: HttpGetParams) => Promise<HttpResponseResult>;
   post: <BodyType>(params: HttpPostParams<BodyType>) => Promise<HttpPostResult>;
   put: <BodyType>(params: HttpPutParams<BodyType>) => Promise<HttpPutResult>;

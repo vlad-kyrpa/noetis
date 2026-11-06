@@ -25,6 +25,16 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Use functional collection methods such as `map`, `flatMap`, `filter`, and `forEach` instead of manual loops when they stay readable.
 - Avoid mutation unless the mutation is isolated inside the application core or a storage adapter.
 
+## Naming
+
+- Use descriptive names that say what a thing does or holds; avoid bare generic words like `attempt`, `request`, `send`, `data`, `result`, `params`, `token`, `value`, `handle`.
+- Name functions verb-first after their effect: `attemptRequest`, `createOutgoingHeaders`, `resolveEndpointPath`, not `attempt`, `withAuthorization`, `toPath`.
+- Name predicates and boolean constants as questions: `isUnauthorizedFailure`, `hasValidationIssues`, `wasRotatedMeanwhile`.
+- Qualify values that have siblings or a lifecycle: `initialAccessToken` / `latestAccessToken`, `callerHeaders` / `outgoingHeaders`, `refreshResult`.
+- Name lookup records after the mapping they perform: `REFRESH_FAILURE_TO_API_FAILURE`, not `REFRESH_FAILURES`.
+- Do not promise more than the value guarantees: headers that only *may* carry a token are `outgoingHeaders`, not `authorizedHeaders`.
+- Keep established domain terms short when they are already precise (`decode`, `id`, `modulePath`).
+
 ## Parameters
 
 - If a function has more than one parameter, create a named parameters interface.

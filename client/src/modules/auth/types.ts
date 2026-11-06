@@ -31,10 +31,15 @@ export interface AuthFormFailure {
 
 export type AuthApiResult<Value> = Promise<Result<Value, ApiFailure>>;
 
+// Unauthenticated auth endpoints; the session uses these to obtain and rotate tokens.
 export interface AuthApi {
   login: (input: LoginInput) => AuthApiResult<TokenPair>;
   logout: (input: RefreshInput) => AuthApiResult<null>;
-  me: (accessToken: string) => AuthApiResult<AuthenticatedUser>;
   refresh: (input: RefreshInput) => AuthApiResult<TokenPair>;
   register: (input: RegisterInput) => AuthApiResult<AuthenticatedUser>;
+}
+
+// Authenticated auth endpoints, served through the shared backend client (token + refresh).
+export interface AuthClient {
+  me: () => AuthApiResult<AuthenticatedUser>;
 }

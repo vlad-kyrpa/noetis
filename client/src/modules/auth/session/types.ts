@@ -1,13 +1,16 @@
+import type { AccessTokenFactory, RefreshTokenFactory } from '../../../common/backend-client/types';
 import type { Result } from '../../../common/result/types';
-import type { TokenPair, TokenStorage } from '../../../common/token-storage/types';
+import type { TokenStorage } from '../../../common/token-storage/types';
 import type { AuthApi, AuthFormFailure, LoginInput } from '../types';
 
-// Why a refresh did not produce a new token pair. Only `Network` keeps the stored tokens.
-export enum RefreshFailure {
-  NoRefreshToken,
-  Rejected,
-  Network,
-}
+// The token factories are the seam between auth and the backend client, so they are defined
+// next to the client and re-exported here for auth code.
+export { RefreshFailure } from '../../../common/backend-client/types';
+export type {
+  AccessTokenFactory,
+  RefreshResult,
+  RefreshTokenFactory,
+} from '../../../common/backend-client/types';
 
 export enum SessionEvent {
   SignedIn,
@@ -15,14 +18,6 @@ export enum SessionEvent {
   Expired,
   SignedOut,
 }
-
-export type RefreshResult = Result<TokenPair, RefreshFailure>;
-
-// Returns the current access token synchronously so request code can inject it as a header.
-export type AccessTokenFactory = () => string | null;
-
-// Rotates the token pair; concurrent callers share one in-flight backend call.
-export type RefreshTokenFactory = () => Promise<RefreshResult>;
 
 export type SessionListener = (event: SessionEvent) => void;
 
