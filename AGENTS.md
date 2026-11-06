@@ -12,6 +12,8 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Do not annotate callback parameters or return values inside `map`, `filter`, `find`, `flatMap`, or similar collection methods unless inference fails or a type predicate is required.
 - Keep shared module types in a `types.ts` file at the module root.
 - Prefer narrow domain types over loose primitives when the value has meaning.
+- Use enums instead of string literal union types for a fixed set of domain values (e.g. `AppArea.Notes`, not `'notes'`). Use string-valued members when the value is shown, stored, or sent over the wire.
+- Key records over an enum with computed keys (`[AppArea.Notes]: …`) so every member must be handled.
 - No concrete class/function should depend on other concrete class object -> use interfaces.
 
 ## Function Style

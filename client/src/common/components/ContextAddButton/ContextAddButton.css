@@ -1,0 +1,35 @@
+/* Hangs from the top edge like a ribbon bookmark, with a V notch cut into its tail. */
+.context-add-button {
+  align-items: flex-end;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-end: var(--space-4);
+  z-index: var(--layer-2);
+  width: var(--bookmark-width);
+  height: var(--bookmark-height);
+  padding: 0 0 calc(var(--bookmark-notch) + var(--space-2));
+  border: 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--bookmark-notch)), 0 100%);
+  border-radius: var(--radius-0);
+  background: var(--color-accent);
+  box-shadow: var(--shadow-0);
+  color: var(--color-accent-contrast);
+  cursor: pointer;
+  transition:
+    height var(--transition-1),
+    background var(--transition-1);
+}
+
+.context-add-button:hover,
+.context-add-button:focus-visible {
+  height: var(--bookmark-height-active);
+  background: var(--color-accent-hover);
+}
+
+.context-add-button:focus-visible {
+  /* clip-path hides anything drawn outside the shape, so the ring is drawn inside it. */
+  outline: 2px solid var(--color-accent-contrast);
+  outline-offset: -4px;
+}

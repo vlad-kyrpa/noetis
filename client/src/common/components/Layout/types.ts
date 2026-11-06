@@ -7,4 +7,9 @@ export interface HudAction<TActionId extends string> {
   onClick: () => void;
 }
 
-export type LayoutScale = 'mobile' | 'tablet' | 'full';
+// Values are written to the `data-layout-scale` attribute for CSS to select on.
+export enum LayoutScale {
+  Mobile = 'mobile',
+  Tablet = 'tablet',
+  Full = 'full',
+}

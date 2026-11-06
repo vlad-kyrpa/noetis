@@ -10,7 +10,7 @@ import type {
   HttpQuery,
   HttpResponseResult,
 } from './types';
-import { HttpNotSentReason } from './types';
+import { HttpMethod, HttpNotSentReason } from './types';
 
 interface PathWithQueryParams {
   path: string;
@@ -20,13 +20,13 @@ interface PathWithQueryParams {
 interface SendRequestParams {
   body?: BodyInit;
   headers?: HeadersInit;
-  method: 'DELETE' | 'GET' | 'POST' | 'PUT';
+  method: HttpMethod;
   path: string;
   query?: HttpQuery;
 }
 
 interface SendJsonRequestParams<BodyType> extends HttpBodyRequestParams<BodyType> {
-  method: 'POST' | 'PUT';
+  method: HttpMethod.Post | HttpMethod.Put;
 }
 
 // Adds defined query values to a path while preserving an existing query string.
@@ -103,18 +103,18 @@ const sendJsonRequest = async <BodyType>({
 
 // Sends a GET request with optional query values and headers.
 const get = async ({ headers, path, query }: HttpGetParams): Promise<HttpResponseResult> =>
-  sendRequest({ headers, method: 'GET', path, query });
+  sendRequest({ headers, method: HttpMethod.Get, path, query });
 
 // Sends a validated JSON POST request.
 const post = async <BodyType>(params: HttpPostParams<BodyType>): Promise<HttpPostResult> =>
-  sendJsonRequest({ ...params, method: 'POST' });
+  sendJsonRequest({ ...params, method: HttpMethod.Post });
 
 // Sends a validated JSON PUT request.
 const put = async <BodyType>(params: HttpPutParams<BodyType>): Promise<HttpPutResult> =>
-  sendJsonRequest({ ...params, method: 'PUT' });
+  sendJsonRequest({ ...params, method: HttpMethod.Put });
 
 // Sends a DELETE request with optional query values and headers.
 const remove = async ({ headers, path, query }: HttpDeleteParams): Promise<HttpResponseResult> =>
-  sendRequest({ headers, method: 'DELETE', path, query });
+  sendRequest({ headers, method: HttpMethod.Delete, path, query });
 
 export const http = { delete: remove, get, post, put };

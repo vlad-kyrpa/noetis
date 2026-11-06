@@ -1,3 +1,6 @@
+import { ButtonVariant } from '../../../common/components/Button/types';
+import { MessageTone } from '../../../common/components/Message/types';
+import { HeadingScale } from '../../../common/components/Heading/types';
 import type { FormEvent, ReactElement } from 'react';
 import { Block } from '../../../common/components/Block';
 import { Button } from '../../../common/components/Button/Button';
@@ -39,10 +42,10 @@ export function RegisterPage(): ReactElement {
   return (
     <section aria-labelledby="register-title" className="auth-page">
       <Block>
-        <Heading id="register-title" scale={1}>
+        <Heading id="register-title" scale={HeadingScale.Page}>
           register
         </Heading>
-        {errorMessage !== undefined && <Message tone="issue">{errorMessage}</Message>}
+        {errorMessage !== undefined && <Message tone={MessageTone.Issue}>{errorMessage}</Message>}
         <Text>Create an account to start organizing your work.</Text>
         <form
           className="auth-form"
@@ -81,7 +84,7 @@ export function RegisterPage(): ReactElement {
             type="password"
             value={password}
           />
-          <Button disabled={isSubmitting} type="submit" variant="active">
+          <Button disabled={isSubmitting} type="submit" variant={ButtonVariant.Active}>
             {isSubmitting ? 'registering…' : 'register'}
           </Button>
         </form>

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { LayoutScale } from '../components/Layout/types';
+import { LayoutScale } from '../components/Layout/types';
 
 const TABLET_VIEWPORT_WIDTH = 48 * 16;
 const PC_VIEWPORT_WIDTH = 75 * 16;
@@ -9,14 +9,14 @@ const getLayoutScale = (): LayoutScale => {
   const viewportWidth = window.innerWidth;
 
   if (viewportWidth < TABLET_VIEWPORT_WIDTH) {
-    return 'mobile';
+    return LayoutScale.Mobile;
   }
 
-  return viewportWidth < PC_VIEWPORT_WIDTH ? 'tablet' : 'full';
+  return viewportWidth < PC_VIEWPORT_WIDTH ? LayoutScale.Tablet : LayoutScale.Full;
 };
 
 // Provides the safe initial scale used while rendering outside the browser.
-const getServerLayoutScale = (): LayoutScale => 'full';
+const getServerLayoutScale = (): LayoutScale => LayoutScale.Full;
 
 // Registers a listener for viewport changes without owning application state.
 const subscribeToViewport = (listener: () => void): (() => void) => {

@@ -56,7 +56,12 @@
   --control-height-2: 2.5rem;
   --control-height-3: 3rem;
   --layout-2: var(--control-height-3);
+  --bookmark-width: var(--control-height-3);
+  --bookmark-height: 4.5rem;
+  --bookmark-height-active: 5rem;
+  --bookmark-notch: 0.75rem;
   --layer-1: 1;
+  --layer-2: 2;
   --transition-1: 120ms ease;
   --transition-2: 200ms ease;
 

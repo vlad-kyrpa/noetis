@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 
-export type MessageTone = 'issue' | 'info';
+// Values double as the `message-<tone>` CSS class suffix.
+export enum MessageTone {
+  Issue = 'issue',
+  Info = 'info',
+}
 
 export interface MessageProps {
   children: ReactNode;

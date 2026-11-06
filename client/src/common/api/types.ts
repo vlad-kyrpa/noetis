@@ -82,3 +82,10 @@ export type ApiFailure =
   | { readonly kind: ApiFailureKind.Decode };
 
 export type Decoder<Value> = (value: unknown) => Value | undefined;
+
+export enum HttpMethod {
+  Delete = 'DELETE',
+  Get = 'GET',
+  Post = 'POST',
+  Put = 'PUT',
+}

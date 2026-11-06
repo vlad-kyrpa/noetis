@@ -1,3 +1,4 @@
+import { HeadingScale } from '../components/Heading/types';
 import type { ReactElement } from 'react';
 import { useAuth } from '../../modules/auth/context/useAuth';
 import { Block } from '../components/Block';
@@ -13,7 +14,7 @@ export function MenuPage(): ReactElement {
   return (
     <section aria-labelledby="menu-page-title" className="menu-page">
       <Block>
-        <Heading id="menu-page-title" scale={1}>
+        <Heading id="menu-page-title" scale={HeadingScale.Page}>
           menu
         </Heading>
         <Text>
