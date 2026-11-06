@@ -1,0 +1,17 @@
+/* Places navigation beside content on larger screens and below it on smaller screens. */
+.layout {
+  min-height: 100dvh;
+}
+
+.layout-content {
+  min-width: 0;
+  padding: var(--space-4);
+  padding-block-end: calc(var(--space-4) + var(--control-height-3));
+}
+
+@media (min-width: 75rem) {
+  .layout-content {
+    padding-block-end: var(--space-4);
+    padding-inline-start: calc(var(--space-4) + var(--layout-2));
+  }
+}

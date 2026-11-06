@@ -1,0 +1,16 @@
+.block {
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+}
+
+.block-surface {
+  background: var(--color-surface);
+}
+
+.block-on-surface {
+  background: var(--color-surface-raised);
+}
+
+.block-below-surface {
+  background: var(--color-background);
+}

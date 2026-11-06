@@ -1,0 +1,18 @@
+.heading {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: var(--font-weight-3);
+  line-height: var(--line-height-1);
+}
+
+.heading-1 {
+  font-size: var(--font-size-6);
+}
+
+.heading-2 {
+  font-size: var(--font-size-5);
+}
+
+.heading-3 {
+  font-size: var(--font-size-4);
+}

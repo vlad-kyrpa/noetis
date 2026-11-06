@@ -1,0 +1,16 @@
+.auth-page {
+  display: grid;
+  width: min(100%, var(--layout-3));
+  margin-inline: auto;
+  padding-block: var(--space-8);
+}
+
+.auth-form {
+  display: grid;
+  gap: var(--space-4);
+  margin-block: var(--space-6);
+}
+
+.auth-form .button {
+  width: 100%;
+}

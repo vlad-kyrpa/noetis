@@ -1,0 +1,11 @@
+.menu-page {
+  display: grid;
+  width: min(100%, var(--layout-3));
+  margin-inline: auto;
+  padding-block: var(--space-8);
+}
+
+.menu-page .block {
+  display: grid;
+  gap: var(--space-4);
+}
