@@ -1,0 +1,16 @@
+/* The right-hand (or, on mobile, full-width) panel holding one task list. */
+.task-panel {
+  display: grid;
+  align-content: start;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.task-panel-empty {
+  display: grid;
+  place-items: center;
+  min-height: var(--layout-panel-placeholder-height);
+  padding: var(--space-6);
+  color: var(--color-text-subtle);
+  text-align: center;
+}

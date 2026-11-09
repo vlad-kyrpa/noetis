@@ -7,13 +7,20 @@ test('taskInputSchema validates task content, status, and relations', () => {
   const input = {
     title: 'Ship module',
     description: null,
-    tagId: 'work',
+    tags: ['work'],
     dueTo: '2026-10-20',
     status: 'inProgress',
     linkedTaskIds: ['task-1'],
     linkedNoteIds: ['note-1'],
   };
   assert.deepEqual(taskInputSchema.safeParse(input).data, input);
+  assert.deepEqual(
+    taskInputSchema.safeParse({ ...input, tags: [' Work', 'work', 'Робота'] }).data,
+    {
+      ...input,
+      tags: ['work', 'робота'],
+    },
+  );
   assert.equal(taskInputSchema.safeParse({ ...input, status: 'later' }).success, false);
   assert.equal(taskInputSchema.safeParse({ ...input, linkedTaskIds: [1] }).success, false);
   assert.equal(taskInputSchema.safeParse({ ...input, title: ' ' }).success, false);

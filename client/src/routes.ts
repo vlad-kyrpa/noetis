@@ -6,10 +6,13 @@ export const routes = {
   tasks: {
     root: '/tasks',
     views: '/tasks/views',
-    list: '/tasks/views/:id',
+    // `day`, `week`, `all` and `new` are reserved; custom view ids are UUIDs, so none collide.
+    list: '/tasks/views/:viewId',
+    createView: '/tasks/views/new',
+    search: '/tasks/search',
     create: '/tasks/new',
-    details: '/tasks/:id',
-    update: '/tasks/:id/edit',
+    // `search` and `new` are static siblings, so they outrank `:taskId`.
+    details: '/tasks/:taskId',
   },
   notes: {
     root: '/notes',
@@ -24,4 +27,13 @@ export const routes = {
     views: '/expenses/views',
     list: '/expenses/views/:id',
   },
+};
+
+// Path segments of the nested tasks routes, relative to `routes.tasks.root`.
+export const TASKS_CHILD_PATHS = {
+  createTask: 'new',
+  createView: 'views/new',
+  search: 'search',
+  task: ':taskId',
+  view: 'views/:viewId',
 };

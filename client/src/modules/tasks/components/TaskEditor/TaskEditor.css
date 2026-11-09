@@ -1,0 +1,113 @@
+.task-editor {
+  display: grid;
+}
+
+/* Back · title · save stay pinned while scrolling a long description. */
+.task-editor .panel-header {
+  position: sticky;
+  z-index: var(--layer-1);
+  inset-block-start: 0;
+  background: var(--color-surface);
+}
+
+.task-editor .panel-header-row {
+  align-items: flex-start;
+}
+
+.task-editor-title {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Reads as the page heading: no box until hovered or focused, so it looks like a document. */
+.task-editor-title-input {
+  width: 100%;
+  min-height: var(--control-height-2);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-0);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-5);
+  font-weight: var(--font-weight-3);
+  line-height: var(--line-height-1);
+}
+
+.task-editor-title-input:hover {
+  border-color: var(--color-border);
+}
+
+.task-editor-title-input:focus-visible {
+  border-color: var(--color-border-strong);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.task-editor-title-input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.task-editor .panel-header-row > .button {
+  flex: none;
+}
+
+.task-editor-body {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-4);
+}
+
+/* The description is where the task's context is written, so it gets most of the page. */
+.task-editor-description .text-area-field-control {
+  min-height: var(--task-description-min-height);
+}
+
+/* Status, tags and due date sit side by side when there is room. */
+.task-editor-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--task-editor-meta-min-width), 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.task-editor-field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.task-editor-label {
+  color: var(--color-text);
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-2);
+}
+
+.task-editor-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* On the selected (accent) button the marker takes the button's contrast colour. */
+.task-editor-statuses .button-active .task-status-marker {
+  color: var(--color-accent-contrast);
+}
+
+.task-editor-timestamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-2);
+}
+
+.task-editor-timestamp {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.task-editor-timestamp dd {
+  margin: 0;
+}

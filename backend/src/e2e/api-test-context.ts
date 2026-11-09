@@ -12,6 +12,7 @@ import {
   tags,
   taskLinks,
   taskNotes,
+  taskTags,
   tasks,
   userRefreshTokens,
   users,
@@ -77,6 +78,7 @@ const resetApiDatabase = async (database: Database): Promise<void> => {
     database.delete(taskLinks),
     database.delete(taskNotes),
     database.delete(viewTags),
+    database.delete(taskTags),
   ]);
   // Records may still reference tags, so remove them before deleting the shared labels.
   await Promise.all([

@@ -1,0 +1,15 @@
+.task-status-marker {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+.task-status-marker[data-status='inProgress'] {
+  color: var(--color-warning);
+}
+
+.task-status-marker[data-status='done'] {
+  color: var(--color-success);
+}

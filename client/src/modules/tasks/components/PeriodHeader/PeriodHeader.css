@@ -1,0 +1,19 @@
+.period-header {
+  display: flex;
+  flex: 1;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.period-header .heading {
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.period-header .button {
+  display: inline-grid;
+  place-items: center;
+  padding-inline: var(--space-3);
+}

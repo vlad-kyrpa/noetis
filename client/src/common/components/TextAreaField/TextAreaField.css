@@ -1,0 +1,26 @@
+.text-area-field {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-2);
+}
+
+.text-area-field-control {
+  min-height: var(--text-area-min-height);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-0);
+  background: var(--color-background);
+  box-shadow: var(--shadow-0);
+  color: var(--color-text);
+  font-size: var(--font-size-3);
+  font-weight: var(--font-weight-1);
+  line-height: var(--line-height-2);
+  resize: vertical;
+}
+
+.text-area-field-control:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}

@@ -39,6 +39,7 @@ test('GET /api/views', async (suite) => {
           tags: [],
           notes: [],
           tasks: [],
+          taskTags: [],
           expenses: [],
           views: [
             {
@@ -175,6 +176,30 @@ test('POST /api/views', async (suite) => {
       await context.reset();
     }
   });
+  await suite.test('stores tags lower-cased, merging case-only duplicates', async () => {
+    const context = getContext();
+    try {
+      await seedApiFixture({ database: context.database, fixture: createApiFixture() });
+      const response = await context.fetch('/api/views', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ type: 'task', title: 'Errands', tags: ['Work', 'work', 'Робота'] }),
+      });
+      const payload = (await response.json()) as {
+        readonly value: { readonly tags: readonly string[] };
+      };
+      const tagsResponse = await context.fetch('/api/tags');
+      const tagsPayload = (await tagsResponse.json()) as {
+        readonly value: readonly { readonly label: string }[];
+      };
+      assert.equal(response.status, 201);
+      assert.deepEqual([...payload.value.tags].sort(), ['work', 'робота']);
+      assert.deepEqual(tagsPayload.value.map((tag) => tag.label).sort(), ['work', 'робота']);
+    } finally {
+      await context.reset();
+    }
+  });
+
   await suite.test('rejects an invalid type and duplicate type-title pair', async () => {
     const context = getContext();
     try {

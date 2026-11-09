@@ -9,6 +9,7 @@ import { success } from '../../common/utils/result';
 import { noteServiceFactory } from '../services/note-service';
 import type { NoteInput } from '../types';
 import { z } from 'zod';
+import { tagLabelsSchema } from '../../tags/tag-labels-schema';
 
 /** Represents the absence of path parameters on the Note create endpoint. */
 export type CreateNoteParams = EmptyObject;
@@ -21,7 +22,7 @@ export type CreateNoteRequestContext = RequestContext<NoteInput, CreateNoteParam
 export const noteInputSchema: z.ZodType<NoteInput> = z.object({
   title: z.string().min(1),
   body: z.string(),
-  tags: z.array(z.string().trim().min(1)).default([]),
+  tags: tagLabelsSchema,
   linkedTaskIds: z.array(z.string().min(1)).default([]),
   linkedNoteIds: z.array(z.string().min(1)).default([]),
 });

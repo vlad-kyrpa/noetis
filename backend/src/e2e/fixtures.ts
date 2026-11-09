@@ -6,6 +6,7 @@ import {
   tags,
   taskLinks,
   taskNotes,
+  taskTags,
   tasks,
   users,
   views,
@@ -50,6 +51,7 @@ export interface ApiFixture {
   readonly noteTasks: (typeof noteTasks.$inferInsert)[];
   readonly taskLinks: (typeof taskLinks.$inferInsert)[];
   readonly taskNotes: (typeof taskNotes.$inferInsert)[];
+  readonly taskTags: (typeof taskTags.$inferInsert)[];
 }
 
 /** Allows a test to override only the fixture collections relevant to its scenario. */
@@ -80,7 +82,6 @@ export const createApiFixture = (overrides: ApiFixtureOverrides = {}): ApiFixtur
         userId: 'e2e-test-user',
         title: 'Ship API',
         description: 'Release the integration tests.',
-        tagId: 'tag-work',
         dueTo: '2026-02-01',
         status: 'inProgress',
         createdAt,
@@ -104,6 +105,7 @@ export const createApiFixture = (overrides: ApiFixtureOverrides = {}): ApiFixtur
     noteTasks: [{ noteId: 'note-plan', taskId: 'task-ship' }],
     taskLinks: [],
     taskNotes: [{ taskId: 'task-ship', noteId: 'note-plan' }],
+    taskTags: [{ taskId: 'task-ship', tagId: 'tag-work' }],
     ...overrides,
   };
 };
@@ -140,14 +142,12 @@ export const seedApiFixture = async (params: {
           ),
     fixture.expenses.length === 0
       ? Promise.resolve()
-      : database
-          .insert(expenses)
-          .values(
-            fixture.expenses.map((expense) => ({
-              ...expense,
-              userId: expense.userId ?? defaultOwnerId,
-            })),
-          ),
+      : database.insert(expenses).values(
+          fixture.expenses.map((expense) => ({
+            ...expense,
+            userId: expense.userId ?? defaultOwnerId,
+          })),
+        ),
     fixture.views.length === 0
       ? Promise.resolve()
       : database
@@ -170,6 +170,9 @@ export const seedApiFixture = async (params: {
     fixture.taskNotes.length === 0
       ? Promise.resolve()
       : database.insert(taskNotes).values(fixture.taskNotes),
+    fixture.taskTags.length === 0
+      ? Promise.resolve()
+      : database.insert(taskTags).values(fixture.taskTags),
     fixture.viewTags.length === 0
       ? Promise.resolve()
       : database.insert(viewTags).values(fixture.viewTags),

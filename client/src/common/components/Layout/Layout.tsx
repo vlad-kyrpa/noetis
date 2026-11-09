@@ -4,18 +4,22 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { routes } from '../../../routes';
 import { useLayout } from '../../hooks/useLayout';
 import { findAppArea } from '../../navigation/app-area';
+import { resolveRouteValue } from '../../navigation/route-tree';
 import { AppArea } from '../../navigation/types';
 import './Layout.css';
 import { ContextAddButton } from '../ContextAddButton/ContextAddButton';
+import type { AddActionTrees } from '../ContextAddButton/types';
 import { Hud } from '../Hud/Hud';
 import type { HudAction } from './types';
 
 interface LayoutProps {
+  // Built at the composition root, so common layout code never imports feature modules.
+  addActionTrees: AddActionTrees;
   children: ReactNode;
 }
 
 // Combines page content, the persistent HUD, and the contextual add bookmark into one shell.
-export const Layout = ({ children }: LayoutProps) => {
+export const Layout = ({ addActionTrees, children }: LayoutProps) => {
   const layoutScale = useLayout();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -47,11 +51,15 @@ export const Layout = ({ children }: LayoutProps) => {
   );
 
   const activeArea = findAppArea(pathname);
+  const addAction =
+    activeArea === undefined
+      ? null
+      : (resolveRouteValue({ node: addActionTrees[activeArea], pathname }) ?? null);
 
   return (
     <div className="layout" data-layout-scale={layoutScale}>
       <Hud actions={layoutHudActions} activeAction={activeArea} />
-      <ContextAddButton area={activeArea} />
+      <ContextAddButton action={addAction} />
       <main className="layout-content">{children}</main>
     </div>
   );

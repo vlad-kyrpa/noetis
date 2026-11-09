@@ -1,6 +1,6 @@
 import { validatedHandler } from '../../common/middleware/validationMiddleware';
 import { RouteHandlerDependencies } from '../../common/types';
-import { failure, success } from '../../common/utils/result';
+import { success } from '../../common/utils/result';
 import { taskServiceFactory } from '../services/task-service';
 import { type LinkTaskRequestContext } from './link-note-by-title';
 

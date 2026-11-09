@@ -9,6 +9,7 @@ import { success } from '../../common/utils/result';
 import { taskServiceFactory } from '../services/task-service';
 import type { TaskInput } from '../types';
 import { z } from 'zod';
+import { tagLabelsSchema } from '../../tags/tag-labels-schema';
 
 /** Represents the absence of path parameters on the Task create endpoint. */
 export type CreateTaskParams = EmptyObject;
@@ -21,7 +22,7 @@ export type CreateTaskRequestContext = RequestContext<TaskInput, CreateTaskParam
 export const taskInputSchema: z.ZodType<TaskInput> = z.object({
   title: z.string().trim().min(1),
   description: z.string().nullable(),
-  tags: z.array(z.string().trim().min(1)).default([]),
+  tags: tagLabelsSchema,
   dueTo: z.string().nullable(),
   status: z.enum(['undone', 'inProgress', 'done']),
   linkedTaskIds: z.array(z.string().min(1)).default([]),

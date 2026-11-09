@@ -32,7 +32,7 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 - Name predicates and boolean constants as questions: `isUnauthorizedFailure`, `hasValidationIssues`, `wasRotatedMeanwhile`.
 - Qualify values that have siblings or a lifecycle: `initialAccessToken` / `latestAccessToken`, `callerHeaders` / `outgoingHeaders`, `refreshResult`.
 - Name lookup records after the mapping they perform: `REFRESH_FAILURE_TO_API_FAILURE`, not `REFRESH_FAILURES`.
-- Do not promise more than the value guarantees: headers that only *may* carry a token are `outgoingHeaders`, not `authorizedHeaders`.
+- Do not promise more than the value guarantees: headers that only _may_ carry a token are `outgoingHeaders`, not `authorizedHeaders`.
 - Keep established domain terms short when they are already precise (`decode`, `id`, `modulePath`).
 
 ## Parameters
@@ -57,6 +57,7 @@ These rules keep the codebase predictable, testable, and easy to move across pla
 
 - Keep the core pure and storage-agnostic.
 - Keep React code out of the core and application layer.
+- In React components, compute decisions and derived rendering values in named `const` declarations before the `return` block. Like `backTo === null ? null` should be named by const, but the return component branching should be just there or extracted into a helper component.
 - Keep filesystem paths and binary index details inside the storage layer.
 - Route state changes through commands.
 - Route reads through queries.

@@ -1,0 +1,37 @@
+.tasks-page {
+  display: grid;
+  gap: var(--space-4);
+  width: min(100%, var(--layout-1));
+  margin-inline: auto;
+}
+
+/* Keeps the heading clear of the add bookmark pinned to the top-right corner. */
+.tasks-page-header {
+  display: flex;
+  align-items: center;
+  min-height: var(--bookmark-height);
+  padding-inline-end: calc(var(--bookmark-width) + var(--space-4));
+}
+
+.tasks-page-header .heading {
+  margin: 0;
+}
+
+/* Tablet / PC: views on the left, the open panel on the right, each scrolling on its own. */
+.tasks-page-split {
+  display: grid;
+  grid-template-columns: var(--layout-split-columns);
+  gap: var(--layout-split-gap);
+  align-items: start;
+}
+
+.tasks-page-column {
+  min-width: 0;
+  max-height: calc(100dvh - var(--layout-split-offset));
+  overflow-y: auto;
+}
+
+.tasks-page-column + .tasks-page-column {
+  padding-inline-start: var(--layout-split-gap);
+  border-inline-start: 1px solid var(--layout-panel-divider);
+}

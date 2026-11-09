@@ -1,6 +1,7 @@
 import { and, eq, inArray, like, sql } from 'drizzle-orm';
 import { tags } from '../../../database/schema';
 import type { Database } from '../../Database';
+import { normalizeTagLabel } from '../normalize-tag-label';
 import type { TagsService } from '../types';
 
 /** Builds the documented Tags service on top of the D1 database abstraction. */
@@ -13,7 +14,12 @@ export const tagServiceFactory = (params: {
     create: async (input) => {
       const rows = await database
         .insert(tags)
-        .values({ id: crypto.randomUUID(), userId, label: input.label, createdAt: new Date() })
+        .values({
+          id: crypto.randomUUID(),
+          userId,
+          label: normalizeTagLabel(input.label),
+          createdAt: new Date(),
+        })
         .onConflictDoNothing()
         .returning();
       return rows[0] ?? null;

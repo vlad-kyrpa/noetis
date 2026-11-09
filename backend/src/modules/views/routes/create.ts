@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { tagLabelsSchema } from '../../tags/tag-labels-schema';
 import {
   type EndpointValidationSchema,
   type RequestContext,
@@ -18,7 +19,7 @@ import type { ViewInput } from '../types';
   z.object({
     type: z.enum(['note', 'expense', 'task']),
     title: z.string().trim().min(1),
-    tags: z.array(z.string().trim().min(1)).default([]),
+    tags: tagLabelsSchema,
   });
 /** Defines the accepted request shape for creating a saved view. */ export const createViewSchema: EndpointValidationSchema<
   ViewInput,

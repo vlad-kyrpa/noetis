@@ -5,7 +5,7 @@ import {
   validationMiddlewareFactory,
 } from '../../common/middleware/validationMiddleware';
 import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
-import { failure, success } from '../../common/utils/result';
+import { success } from '../../common/utils/result';
 import { taskServiceFactory } from '../services/task-service';
 import { z } from 'zod';
 

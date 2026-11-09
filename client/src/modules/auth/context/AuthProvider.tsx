@@ -11,8 +11,16 @@ import { AuthContext } from './auth-context';
 import { AuthStatus } from './types';
 import type { AuthContextValue, AuthProviderProps } from './types';
 
+// `GET /auth/me` answers 404 when the token is valid but its account no longer exists.
+const HTTP_NOT_FOUND = 404;
+
 // Leaves state alone for events the provider already handles elsewhere (login fetches `me` itself).
 const ignoreSessionEvent = (): void => undefined;
+
+// A deleted account (e.g. after a database reset) can never be restored by retrying, so its
+// stored tokens are dead and the user must sign in again.
+const isMissingAccountFailure = (failure: ApiFailure): boolean =>
+  failure.kind === ApiFailureKind.Http && failure.status === HTTP_NOT_FOUND;
 
 // Adapts the auth session to React: holds the current user and status, and exposes the
 // session's actions and token factories to the component tree.
@@ -27,21 +35,33 @@ export function AuthProvider({
   );
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
 
-  // Moves the provider into the state that matches a profile lookup outcome.
-  const applyUserResult = useCallback((result: Result<AuthenticatedUser, ApiFailure>): void => {
-    if (result.ok) {
-      setUser(result.value);
-      setStatus(AuthStatus.Authenticated);
-      return;
-    }
+  // Moves the provider into the state that matches a profile lookup outcome. A missing account
+  // logs out (clearing the dead tokens) instead of showing the "server unavailable" state.
+  const applyUserResult = useCallback(
+    (result: Result<AuthenticatedUser, ApiFailure>): void => {
+      if (result.ok) {
+        setUser(result.value);
+        setStatus(AuthStatus.Authenticated);
+        return;
+      }
 
-    setUser(null);
-    setStatus(
-      result.error.kind === ApiFailureKind.Unauthorized
-        ? AuthStatus.Unauthenticated
-        : AuthStatus.Unavailable,
-    );
-  }, []);
+      setUser(null);
+
+      if (isMissingAccountFailure(result.error)) {
+        // Tokens are cleared synchronously and `SignedOut` sets the status; the backend
+        // revocation is best-effort.
+        void session.logout();
+        return;
+      }
+
+      setStatus(
+        result.error.kind === ApiFailureKind.Unauthorized
+          ? AuthStatus.Unauthenticated
+          : AuthStatus.Unavailable,
+      );
+    },
+    [session],
+  );
 
   // Restores a stored session once on mount; the guard ignores late results after unmount.
   useEffect(() => {

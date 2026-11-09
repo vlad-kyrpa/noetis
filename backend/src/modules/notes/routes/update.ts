@@ -5,7 +5,6 @@ import {
   validationMiddlewareFactory,
 } from '../../common/middleware/validationMiddleware';
 import { type EmptyObject, RouteHandlerDependencies } from '../../common/types';
-import { failure, success } from '../../common/utils/result';
 import { noteServiceFactory } from '../services/note-service';
 import type { NoteInput } from '../types';
 import { createNoteSchema } from './create';

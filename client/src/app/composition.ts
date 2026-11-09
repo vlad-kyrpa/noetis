@@ -3,6 +3,9 @@ import {
   createBackendClientFactory,
   createModuleClient,
 } from '../common/backend-client/create-backend-client-factory';
+import { readBrowserRegionalEnvironment } from '../common/regional/browser-regional-environment';
+import { createRegionalClock } from '../common/regional/regional-clock';
+import { resolveRegionalSettings } from '../common/regional/resolve-regional-settings';
 import { createBrowserTokenStorage } from '../common/token-storage/browser-token-storage';
 import { createAuthApi } from '../modules/auth/api/auth-api';
 import { authClientModule } from '../modules/auth/api/auth-client';
@@ -30,3 +33,9 @@ export const authClient = createModuleClient({
   factory: backendClientFactory,
   module: authClientModule,
 });
+
+// Browser locale, time zone and week start, read once. A user-settings override can replace
+// these later without touching any consumer.
+export const regionalSettings = resolveRegionalSettings(readBrowserRegionalEnvironment());
+
+export const regionalClock = createRegionalClock(regionalSettings);

@@ -1,6 +1,7 @@
 import type { BackendClient, ModuleClientDefinition } from '../../../common/backend-client/types';
 import type { TasksClient } from '../types';
 import { decodeRemovedTaskIds, decodeTask, decodeTaskList } from './decoders';
+import { toTaskHttpQuery } from './task-list-http-query';
 import { validateRemoveTasks, validateTaskInput } from './validators';
 
 const TASKS_MODULE_PATH = '/tasks';
@@ -17,8 +18,8 @@ const createTasksClient = (client: BackendClient): TasksClient => ({
       validator: validateTaskInput,
     }),
   get: (id) => client.get({ decode: decodeTask, path: encodeURIComponent(id) }),
-  list: (filters) =>
-    client.get({ decode: decodeTaskList, path: TASKS_ROOT, query: { ...filters } }),
+  list: (query) =>
+    client.get({ decode: decodeTaskList, path: TASKS_ROOT, query: toTaskHttpQuery(query) }),
   remove: (ids) =>
     client.delete({
       body: { ids },

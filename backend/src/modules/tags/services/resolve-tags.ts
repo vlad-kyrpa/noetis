@@ -1,9 +1,13 @@
 import { and, eq } from 'drizzle-orm';
 import { tags } from '../../../database/schema';
 import type { Database } from '../../Database';
+import { normalizeTagLabels } from '../normalize-tag-label';
 import type { Tag } from '../types';
 
-/** Resolves public tag labels to durable records, creating only labels that do not already exist. */
+/**
+ * Resolves public tag labels to durable records, creating only labels that do not already exist.
+ * Labels are normalized here as well as in validation, so no caller can store a mixed-case tag.
+ */
 export const resolveTags = async (params: {
   readonly database: Database;
   readonly userId: string;
@@ -12,7 +16,7 @@ export const resolveTags = async (params: {
   const { database, labels, userId } = params;
 
   return Promise.all(
-    labels.map(async (label) => {
+    normalizeTagLabels(labels).map(async (label) => {
       const existing = await database
         .select()
         .from(tags)

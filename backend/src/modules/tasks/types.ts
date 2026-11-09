@@ -27,11 +27,21 @@ export interface TaskInput {
   readonly linkedNoteIds: readonly string[];
 }
 
-/** Defines the documented Tasks query filters. */
+/** Defines the documented Tasks query filters; every supplied filter combines with AND. */
 export interface TaskFilters {
+  /** Case-insensitive substring of the title. */
   readonly title?: string;
   readonly tagId?: string;
+  /** Exact YYYY-MM-DD day, or 'defined' for any task with a due date. */
   readonly dueTo?: string;
+  /** Inclusive lower YYYY-MM-DD bound of the due date. */
+  readonly dueFrom?: string;
+  /** Inclusive upper YYYY-MM-DD bound of the due date. */
+  readonly dueUntil?: string;
+  /** Tasks carrying every tag of this owned view; an unknown view matches nothing. */
+  readonly viewId?: string;
+  /** Tasks carrying every one of these lower-cased labels (query: comma-joined). */
+  readonly tags?: readonly string[];
   readonly status?: TaskStatus;
 }
 

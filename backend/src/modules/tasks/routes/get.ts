@@ -9,6 +9,20 @@ import { success } from '../../common/utils/result';
 import { taskServiceFactory } from '../services/task-service';
 import type { TaskFilters } from '../types';
 import { z } from 'zod';
+import { normalizeTagLabels } from '../../tags/normalize-tag-label';
+
+/** Inclusive date bounds are plain calendar days, so they compare correctly as strings. */
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+/** Caps the comma-joined tag list so one request cannot ask for an unbounded join. */
+const MAX_QUERY_TAGS = 20;
+/** Separates labels in the `tags` query; tag labels never contain it. */
+const TAG_QUERY_SEPARATOR = ',';
+
+/** Parses `tags=a,b` into lower-cased, deduped, non-empty labels. */
+const tagsQuerySchema = z
+  .string()
+  .transform((joined): readonly string[] => normalizeTagLabels(joined.split(TAG_QUERY_SEPARATOR)))
+  .pipe(z.array(z.string()).max(MAX_QUERY_TAGS));
 
 /** Represents the absence of a JSON body on the Task list endpoint. */
 export type GetTasksBody = undefined;
@@ -25,6 +39,10 @@ export const getTasksSchema: EndpointValidationSchema<GetTasksBody, GetTasksPara
     title: z.string().optional(),
     tagId: z.string().optional(),
     dueTo: z.string().optional(),
+    dueFrom: z.string().regex(ISO_DATE_PATTERN).optional(),
+    dueUntil: z.string().regex(ISO_DATE_PATTERN).optional(),
+    viewId: z.string().min(1).optional(),
+    tags: tagsQuerySchema.optional(),
     status: z.enum(['undone', 'inProgress', 'done']).optional(),
   }),
 };

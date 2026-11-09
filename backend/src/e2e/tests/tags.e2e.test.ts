@@ -84,6 +84,7 @@ test('GET /api/tags', async (suite) => {
           ],
           notes: [],
           tasks: [],
+          taskTags: [],
           expenses: [],
           noteTags: [],
           noteTasks: [],
@@ -137,6 +138,22 @@ test('POST /api/tags', async (suite) => {
       assert.equal(listed.value.length, 1);
       assert.equal(listed.value[0]?.id, created.value.id);
       assert.equal(listed.value[0]?.label, 'personal');
+    } finally {
+      await context.reset();
+    }
+  });
+
+  await suite.test('stores the label lower-cased', async () => {
+    const context = getContext();
+    try {
+      const response = await context.fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ label: 'Робота' }),
+      });
+      const payload = (await response.json()) as { readonly value: { readonly label: string } };
+      assert.equal(response.status, 201);
+      assert.equal(payload.value.label, 'робота');
     } finally {
       await context.reset();
     }
